@@ -9,7 +9,7 @@ class App:
         self.width, self.height = 600, 600
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width, self.height))
-        pygame.display.set_caption('Mario')
+        pygame.display.set_caption('Прыгаем по платформам')
         pygame.key.set_repeat(200, 70)
         self.all_sprites = pygame.sprite.Group()
         self.fps = 50
@@ -20,7 +20,6 @@ class App:
 
     def load_image(self, name, colorkey=None):
         fullname = os.path.join('data', name)
-        # если файл не существует, то выходим
         if not os.path.isfile(fullname):
             print(f"Файл с изображением '{fullname}' не найден")
             sys.exit()
@@ -47,9 +46,41 @@ class App:
                     self.game_over += 1
             if self.game_over == 5:
                 run = False
+                self.end_screen()
 
             self.screen.blit(fon, (0, 0))
             self.all_sprites.draw(self.screen)
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
+    def render(self, screen):
+        font = pygame.font.Font(None, 50)
+
+        text = font.render('Continue?', 1, (0, 0, 0))
+        pygame.draw.rect(screen, (246, 246, 246), (0, 500, 600, 100), 0)
+        screen.blit(text, (200 + (200 - text.get_width()) // 2,
+                           500 + (50 - text.get_height()) // 2))
+
+        text_yes = font.render('Yes', 1, (0, 0, 0))
+        screen.blit(text_yes, (150 + (150 - text.get_width()) // 2,
+                           560 + (40 - text.get_height()) // 2))
+
+        text_no = font.render('No', 1, (0, 0, 0))
+        screen.blit(text_no, (330 + (330 - text.get_width()) // 2,
+                            560 + (40 - text.get_height()) // 2))
+
+    def end_screen(self):
+        fon = pygame.transform.scale(self.load_image('game over 1.jpg'), (self.width, self.height - 100))
+        self.render(self.screen)
+        self.screen.blit(fon, (0, 0))
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:  # должна быть команда нажатия на yes
+                    return  # начинаем новую игру
+
             pygame.display.flip()
             self.clock.tick(self.fps)
 
