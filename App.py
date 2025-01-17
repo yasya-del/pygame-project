@@ -3,6 +3,20 @@ import sys
 import pygame
 
 
+class Hero(pygame.sprite.Sprite):
+    def __init__(self, app, pos):
+        super().__init__(app.all_sprites, app.player_group)
+        self.image = app.load_image("mar.png")
+        self.rect = self.image.get_rect()
+        self.app = app
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect = self.image.get_rect().move(
+            self.app.tile_width * pos[0] + 15, self.app.tile_height * pos[1] + 5)
+
+    def update(self):
+        pass
+
+
 class App:
     def __init__(self):
         pygame.init()
