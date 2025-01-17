@@ -5,16 +5,18 @@ import pygame
 
 class Hero(pygame.sprite.Sprite):
     def __init__(self, app, pos):
-        super().__init__(app.all_sprites, app.player_group)
-        self.image = app.load_image("mar.png")
-        self.rect = self.image.get_rect()
         self.app = app
+        super().__init__(app.player_group, app.all_sprites)
+        self.image = self.app.load_image("bird.jpg")
+        self.rect = self.image.get_rect()
+        # вычисляем маску для эффективного сравнения
         self.mask = pygame.mask.from_surface(self.image)
-        self.rect = self.image.get_rect().move(
-            self.app.tile_width * pos[0] + 15, self.app.tile_height * pos[1] + 5)
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
 
-    def update(self):
-        pass
+    def update(self, pos):
+        self.rect.x += pos[0]
+        self.rect.y += pos[1]
 
 
 class App:
@@ -26,6 +28,8 @@ class App:
         pygame.display.set_caption('Прыгаем по платформам')
         pygame.key.set_repeat(200, 70)
         self.all_sprites = pygame.sprite.Group()
+        self.player_group = pygame.sprite.Group()
+        self.hero = Hero(self, (257, 543))
         self.fps = 50
 
     def terminate(self):
@@ -47,7 +51,6 @@ class App:
             image = image.convert_alpha()
         return image
 
-
     def run_game(self):
         run = True
         self.game_over = 0
@@ -58,12 +61,18 @@ class App:
                     self.terminate()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_1:
                     self.game_over += 1
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_RIGHT]:
+                self.hero.update((10, 0))
+            if keys[pygame.K_LEFT]:
+                self.hero.update((-10, 0))
             if self.game_over == 5:
                 run = False
                 self.end_screen()
 
             self.screen.blit(fon, (0, 0))
             self.all_sprites.draw(self.screen)
+            self.player_group.draw(self.screen)
             pygame.display.flip()
             self.clock.tick(self.fps)
 
@@ -132,4 +141,3 @@ if __name__ == '__main__':
     app = App()
     app.start_screen()
     app.run_game()
-    
