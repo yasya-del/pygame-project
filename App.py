@@ -13,10 +13,45 @@ class Hero(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect.x = pos[0]
         self.rect.y = pos[1]
+        self.down = False
 
     def update(self, pos):
         self.rect.x += pos[0]
         self.rect.y += pos[1]
+
+    def jump(self):
+        if self.down:
+            self.update((0, 30))
+        else:
+            self.update((0, -30))
+        self.down = not self.down
+
+
+class Button():
+    def __init__(self, s, screen):
+        self.s = s
+        if self.s == 'Yes':
+            self.x = 150
+        else:
+            self.x = 330
+
+        self.font = pygame.font.Font(None, 50)
+        self.text = self.font.render('Continue?', 1, (0, 0, 0))
+        pygame.draw.rect(screen, (246, 246, 246), (0, 500, 600, 100), 0)
+        screen.blit(self.text, (200 + (200 - self.text.get_width()) // 2,
+                           500 + (50 - self.text.get_height()) // 2))
+
+    def render(self, screen):
+        self.text_btn = self.font.render(self.s, 1, (0, 0, 0))
+        screen.blit(self.text_btn, (self.x + (self.x - self.text.get_width()) // 2,
+                               560 + (40 - self.text.get_height()) // 2))
+
+    def check_click(self, pos):
+        if (self.x + (self.x - self.text_btn.get_width()) // 2 - self.text_btn.get_width() <= pos[0]
+                <= self.x + (self.x - self.text_btn.get_width()) // 2
+                and 560 <= pos[1] <= 600):
+            return True
+        return False
 
 
 class App:
@@ -55,12 +90,16 @@ class App:
         run = True
         self.game_over = 0
         fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
+        MYEVENTTYPE = pygame.USEREVENT + 1
+        pygame.time.set_timer(MYEVENTTYPE, 500)
         while run:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.terminate()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_1:
                     self.game_over += 1
+                if event.type == MYEVENTTYPE:
+                    self.hero.jump()
             keys = pygame.key.get_pressed()
             if keys[pygame.K_RIGHT]:
                 self.hero.update((10, 0))
@@ -99,39 +138,27 @@ class App:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.terminate()
-                elif event.type == pygame.KEYDOWN or \
-                        event.type == pygame.MOUSEBUTTONDOWN:
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                     return  # начинаем игру
             pygame.display.flip()
             self.clock.tick(self.fps)
 
-    def render(self, screen):
-        font = pygame.font.Font(None, 50)
-
-        text = font.render('Continue?', 1, (0, 0, 0))
-        pygame.draw.rect(screen, (246, 246, 246), (0, 500, 600, 100), 0)
-        screen.blit(text, (200 + (200 - text.get_width()) // 2,
-                           500 + (50 - text.get_height()) // 2))
-
-        text_yes = font.render('Yes', 1, (0, 0, 0))
-        screen.blit(text_yes, (150 + (150 - text.get_width()) // 2,
-                           560 + (40 - text.get_height()) // 2))
-
-        text_no = font.render('No', 1, (0, 0, 0))
-        screen.blit(text_no, (330 + (330 - text.get_width()) // 2,
-                            560 + (40 - text.get_height()) // 2))
-
     def end_screen(self):
         fon = pygame.transform.scale(self.load_image('game over 1.jpg'), (self.width, self.height - 100))
-        self.render(self.screen)
+        self.yes = Button('Yes', self.screen)
+        self.no = Button('No', self.screen)
         self.screen.blit(fon, (0, 0))
-
+        self.no.render(self.screen)
+        self.yes.render(self.screen)
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.terminate()
-                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:  # должна быть команда нажатия на yes
-                    return  # начинаем новую игру
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.no.check_click(event.pos):
+                        self.terminate()
+                    elif self.yes.check_click(event.pos):
+                        self.run_game()
 
             pygame.display.flip()
             self.clock.tick(self.fps)
