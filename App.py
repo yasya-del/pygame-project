@@ -1,17 +1,83 @@
 import os
 import sys
 import pygame
+import random
+
+
+class Tile(pygame.sprite.Sprite):
+    def __init__(self, app, pos_x, pos_y):
+        super().__init__(app.all_sprites, app.tiles_group)
+        self.image = app.load_image('platform.png')
+        self.rect = self.image.get_rect().move(
+            app.tile_width * pos_x, app.tile_height * pos_y)
+
+
+class Hero(pygame.sprite.Sprite):
+    def __init__(self, app, pos):
+        self.app = app
+        super().__init__(app.player_group, app.all_sprites)
+        self.image = self.app.load_image("bird.png")
+        self.rect = self.image.get_rect()
+        # вычисляем маску для эффективного сравнения
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+        self.down = False
+
+    def update(self, pos):
+        self.rect.x += pos[0]
+        self.rect.y += pos[1]
+
+    def jump(self):
+        if self.down:
+            self.update((0, 60))
+        else:
+            self.update((0, -60))
+        self.down = not self.down
+
+
+class Button():
+    def __init__(self, s, screen):
+        self.s = s
+        if self.s == 'Yes':
+            self.x = 150
+        else:
+            self.x = 330
+
+        self.font = pygame.font.Font(None, 50)
+        self.text = self.font.render('Continue?', 1, (0, 0, 0))
+        pygame.draw.rect(screen, (246, 246, 246), (0, 500, 600, 100), 0)
+        screen.blit(self.text, (200 + (200 - self.text.get_width()) // 2,
+                           500 + (50 - self.text.get_height()) // 2))
+
+    def render(self, screen):
+        self.text_btn = self.font.render(self.s, 1, (0, 0, 0))
+        screen.blit(self.text_btn, (self.x + (self.x - self.text.get_width()) // 2,
+                               560 + (40 - self.text.get_height()) // 2))
+
+    def check_click(self, pos):
+        if (self.x + (self.x - self.text_btn.get_width()) // 2 - self.text_btn.get_width() <= pos[0]
+                <= self.x + (self.x - self.text_btn.get_width()) // 2
+                and 560 <= pos[1] <= 600):
+            return True
+        return False
 
 
 class App:
     def __init__(self):
         pygame.init()
-        self.width, self.height = 600, 600
+        self.width, self.height = 400, 600
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width, self.height))
-        pygame.display.set_caption('Mario')
+        pygame.display.set_caption('Прыгаем по платформам')
         pygame.key.set_repeat(200, 70)
         self.all_sprites = pygame.sprite.Group()
+        self.tiles_group = pygame.sprite.Group()
+        self.player_group = pygame.sprite.Group()
+        self.tile_width = 40
+        self.tile_height = 60
+        self.generate_level()
+        self.hero = Hero(self, (257, 543))
         self.fps = 50
 
     def terminate(self):
@@ -20,7 +86,6 @@ class App:
 
     def load_image(self, name, colorkey=None):
         fullname = os.path.join('data', name)
-        # если файл не существует, то выходим
         if not os.path.isfile(fullname):
             print(f"Файл с изображением '{fullname}' не найден")
             sys.exit()
@@ -34,11 +99,48 @@ class App:
             image = image.convert_alpha()
         return image
 
+    def generate_level(self):
+        for y in range(1, 12):
+            x = random.randint(1, 6)
+            print(x, y)
+            self.tiles_group.add(Tile(self, x, y))
+
+    def run_game(self):
+        run = True
+        self.game_over = 0
+        fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
+        MYEVENTTYPE = pygame.USEREVENT + 1
+        pygame.time.set_timer(MYEVENTTYPE, 500)
+        while run:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_1:
+                    self.game_over += 1
+                if event.type == MYEVENTTYPE:
+                    self.hero.jump()
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_RIGHT]:
+                self.hero.update((10, 0))
+            if keys[pygame.K_LEFT]:
+                self.hero.update((-10, 0))
+            if self.game_over == 5:
+                run = False
+                self.end_screen()
+
+            self.screen.blit(fon, (0, 0))
+            self.all_sprites.draw(self.screen)
+            self.player_group.draw(self.screen)
+            self.tiles_group.draw(self.screen)
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
     def start_screen(self):
         intro_text = ["        Правила игры",
-                      "В игре вы должны продвигаться вверх по платформам",
+                      "В игре вы должны продвигаться вверх",
+                      "по платформам",
                       "Игра заканчивается, когда вы упадёте"
-                      ' ', ' ', ' ', ' ', ' ', ' ', '                   Чтобы начать, нажмите на пробел']
+                      ' ', ' ', ' ', ' ', ' ', ' ', '    Чтобы начать, нажмите на пробел']
 
         fon = pygame.transform.scale(self.load_image('fon.jpg'), (self.width, self.height))
         self.screen.blit(fon, (0, 0))
@@ -57,27 +159,28 @@ class App:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.terminate()
-                elif event.type == pygame.KEYDOWN or \
-                        event.type == pygame.MOUSEBUTTONDOWN:
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                     return  # начинаем игру
             pygame.display.flip()
             self.clock.tick(self.fps)
 
-    def run_game(self):
-        run = True
-        self.game_over = 0
-        fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
-        while run:
+    def end_screen(self):
+        fon = pygame.transform.scale(self.load_image('game over 1.jpg'), (self.width, self.height - 100))
+        self.yes = Button('Yes', self.screen)
+        self.no = Button('No', self.screen)
+        self.screen.blit(fon, (0, 0))
+        self.no.render(self.screen)
+        self.yes.render(self.screen)
+        while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.terminate()
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_1:
-                    self.game_over += 1
-            if self.game_over == 5:
-                run = False
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.no.check_click(event.pos):
+                        self.terminate()
+                    elif self.yes.check_click(event.pos):
+                        self.run_game()
 
-            self.screen.blit(fon, (0, 0))
-            self.all_sprites.draw(self.screen)
             pygame.display.flip()
             self.clock.tick(self.fps)
 
