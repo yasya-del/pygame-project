@@ -76,8 +76,11 @@ class App:
         self.player_group = pygame.sprite.Group()
         self.tile_width = 40
         self.tile_height = 60
+        self.tiles = []
         self.generate_level()
-        self.hero = Hero(self, (257, 543))
+        x = self.tiles[6][0] * self.tile_width - 20
+        y = self.tiles[6][1] * self.tile_height - 50
+        self.hero = Hero(self, (x, y))
         self.fps = 50
 
     def terminate(self):
@@ -100,10 +103,10 @@ class App:
         return image
 
     def generate_level(self):
-        for y in range(1, 12):
-            x = random.randint(1, 6)
-            print(x, y)
+        for y in range(0, 11):
+            x = random.randint(0, 6)
             self.tiles_group.add(Tile(self, x, y))
+            self.tiles.append([x, y])
 
     def run_game(self):
         run = True
