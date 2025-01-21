@@ -35,8 +35,6 @@ class Hero(pygame.sprite.Sprite):
             self.update((0, -60))
         self.down = not self.down
 
-    def on_platform(self):
-        pass
 
 
 class Button():
