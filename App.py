@@ -67,7 +67,7 @@ class Button():
 class App:
     def __init__(self):
         pygame.init()
-        self.width, self.height = 400, 600
+        self.width, self.height = 600, 600
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Прыгаем по платформам')
@@ -105,7 +105,7 @@ class App:
 
     def generate_level(self):
         for y in range(0, 11):
-            x = random.randint(0, 6)
+            x = random.randint(2, 10)
             self.tiles_group.add(Tile(self, x, y))
             self.tiles.append([x, y])
 
