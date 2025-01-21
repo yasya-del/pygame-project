@@ -36,7 +36,6 @@ class Hero(pygame.sprite.Sprite):
         self.down = not self.down
 
 
-
 class Button():
     def __init__(self, s, screen):
         self.s = s
