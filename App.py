@@ -88,6 +88,7 @@ class App:
         pygame.quit()
         sys.exit()
 
+
     def load_image(self, name, colorkey=None):
         fullname = os.path.join('data', name)
         if not os.path.isfile(fullname):
