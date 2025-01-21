@@ -16,24 +16,20 @@ class Hero(pygame.sprite.Sprite):
     def __init__(self, app, pos):
         self.app = app
         super().__init__(app.player_group, app.all_sprites)
-        self.image = self.app.load_image("bird.png")
+        self.image = self.app.load_image("bird.jpg")
         self.rect = self.image.get_rect()
         # вычисляем маску для эффективного сравнения
         self.mask = pygame.mask.from_surface(self.image)
         self.rect.x = pos[0]
         self.rect.y = pos[1]
-        self.down = False
 
     def update(self, pos):
         self.rect.x += pos[0]
         self.rect.y += pos[1]
 
     def jump(self):
-        if self.down:
-            self.update((0, 60))
-        else:
-            self.update((0, -60))
-        self.down = not self.down
+        self.update((0, -60))
+
 
 
 
@@ -71,18 +67,10 @@ class App:
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Прыгаем по платформам')
-        pygame.key.set_repeat(200, 70)
-        self.all_sprites = pygame.sprite.Group()
-        self.tiles_group = pygame.sprite.Group()
-        self.player_group = pygame.sprite.Group()
+        # pygame.key.set_repeat(200, 70)
         self.tile_width = 40
         self.tile_height = 60
-        self.tiles = []
-        self.generate_level()
-        x = self.tiles[6][0] * self.tile_width - 20
-        y = self.tiles[6][1] * self.tile_height - 50
-        self.hero = Hero(self, (x, y))
-        self.fps = 50
+        self.fps = 60
 
     def terminate(self):
         pygame.quit()
@@ -106,16 +94,23 @@ class App:
 
     def generate_level(self):
         for y in range(0, 11):
-            x = random.randint(2, 10)
+            x = random.randint(3, 9)
             self.tiles_group.add(Tile(self, x, y))
             self.tiles.append([x, y])
 
     def run_game(self):
+        self.all_sprites = pygame.sprite.Group()
+        self.tiles_group = pygame.sprite.Group()
+        self.player_group = pygame.sprite.Group()
+        self.tiles = []
+        self.generate_level()
+        x = self.tiles[9][0] * self.tile_width - 20
+        y = self.tiles[9][1] * self.tile_height - 50
+        self.hero = Hero(self, (x, y))
         run = True
-        self.game_over = 0
         fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
         MYEVENTTYPE = pygame.USEREVENT + 1
-        pygame.time.set_timer(MYEVENTTYPE, 500)
+        pygame.time.set_timer(MYEVENTTYPE, 25)
         while run:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -123,13 +118,16 @@ class App:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_1:
                     self.game_over += 1
                 if event.type == MYEVENTTYPE:
-                    self.hero.jump()
+                    if not pygame.sprite.spritecollideany(self.hero, app.tiles_group):
+                        self.hero.update((0, 5))
             keys = pygame.key.get_pressed()
             if keys[pygame.K_RIGHT]:
                 self.hero.update((10, 0))
             if keys[pygame.K_LEFT]:
                 self.hero.update((-10, 0))
-            if self.game_over == 5:
+            if keys[pygame.K_UP] and pygame.sprite.spritecollideany(self.hero, app.tiles_group):
+                self.hero.jump()
+            if self.hero.rect.y > 600:
                 run = False
                 self.end_screen()
 
