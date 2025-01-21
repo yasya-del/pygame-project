@@ -6,6 +6,8 @@ import random
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, app, pos_x, pos_y):
+        self.pos_x = pos_x
+        self.pos_y = pos_y
         super().__init__(app.all_sprites, app.tiles_group)
         self.image = app.load_image('platform.png')
         self.rect = self.image.get_rect().move(
@@ -18,19 +20,18 @@ class Hero(pygame.sprite.Sprite):
         super().__init__(app.player_group, app.all_sprites)
         self.image = self.app.load_image("bird.jpg")
         self.rect = self.image.get_rect()
-        # вычисляем маску для эффективного сравнения
         self.mask = pygame.mask.from_surface(self.image)
         self.rect.x = pos[0]
         self.rect.y = pos[1]
+        self.height = 57
+        self.width = 86
 
     def update(self, pos):
         self.rect.x += pos[0]
         self.rect.y += pos[1]
 
     def jump(self):
-        self.update((0, -60))
-
-
+        self.update((0, -13))
 
 
 class Button():
@@ -67,6 +68,7 @@ class App:
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Прыгаем по платформам')
+        pygame.mixer.music.load('data/music.mp3')
         # pygame.key.set_repeat(200, 70)
         self.tile_width = 40
         self.tile_height = 60
@@ -75,7 +77,6 @@ class App:
     def terminate(self):
         pygame.quit()
         sys.exit()
-
 
     def load_image(self, name, colorkey=None):
         fullname = os.path.join('data', name)
@@ -99,6 +100,7 @@ class App:
             self.tiles.append([x, y])
 
     def run_game(self):
+        pygame.mixer.music.play(-1)
         self.all_sprites = pygame.sprite.Group()
         self.tiles_group = pygame.sprite.Group()
         self.player_group = pygame.sprite.Group()
@@ -115,8 +117,6 @@ class App:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.terminate()
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_1:
-                    self.game_over += 1
                 if event.type == MYEVENTTYPE:
                     if not pygame.sprite.spritecollideany(self.hero, app.tiles_group):
                         self.hero.update((0, 5))
@@ -127,7 +127,7 @@ class App:
                 self.hero.update((-10, 0))
             if keys[pygame.K_UP] and pygame.sprite.spritecollideany(self.hero, app.tiles_group):
                 self.hero.jump()
-            if self.hero.rect.y > 600:
+            if self.hero.rect.y > 543:
                 run = False
                 self.end_screen()
 
@@ -168,6 +168,7 @@ class App:
             self.clock.tick(self.fps)
 
     def end_screen(self):
+        pygame.mixer.music.pause()
         fon = pygame.transform.scale(self.load_image('game over 1.jpg'), (self.width, self.height - 100))
         self.yes = Button('Yes', self.screen)
         self.no = Button('No', self.screen)
