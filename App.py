@@ -74,7 +74,6 @@ class App:
         self.all_sprites = pygame.sprite.Group()
         self.tiles_group = pygame.sprite.Group()
         self.player_group = pygame.sprite.Group()
-        print(1)
         self.tile_width = 40
         self.tile_height = 60
         self.tiles = []
