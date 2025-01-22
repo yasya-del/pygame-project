@@ -1,7 +1,6 @@
 import os
 import sys
 import pygame
-import random
 
 
 class Tile(pygame.sprite.Sprite):
@@ -73,6 +72,8 @@ class App:
         self.tile_width = 40
         self.tile_height = 60
         self.fps = 60
+        self.score = 0
+        self.camera = Camera(self)
 
     def terminate(self):
         pygame.quit()
@@ -93,11 +94,21 @@ class App:
             image = image.convert_alpha()
         return image
 
-    def generate_level(self):
-        for y in range(0, 11):
-            x = random.randint(3, 9)
-            self.tiles_group.add(Tile(self, x, y))
-            self.tiles.append([x, y])
+    def load_level(self, filename):
+        filename = "levels/" + filename
+        with open(filename, 'r') as mapFile:
+            level_map = [line.strip() for line in mapFile]
+        max_width = max(map(len, level_map))
+        return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+
+    def generate_level(self, level):
+        x, y = None, None
+        for y in range(len(level)):
+            for x in range(len(level[y])):
+                if level[y][x] == '@':
+                    self.tiles_group.add(Tile(self, x, y))
+                    self.tiles.append([x, y])
+        return x, y
 
     def run_game(self):
         pygame.mixer.music.play(-1)
@@ -105,12 +116,12 @@ class App:
         self.tiles_group = pygame.sprite.Group()
         self.player_group = pygame.sprite.Group()
         self.tiles = []
-        self.generate_level()
+        level_x, level_y = self.generate_level(self.load_level('easy_level1.txt'))
         x = self.tiles[9][0] * self.tile_width - 20
         y = self.tiles[9][1] * self.tile_height - 50
         self.hero = Hero(self, (x, y))
         run = True
-        fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
+        self.fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
         MYEVENTTYPE = pygame.USEREVENT + 1
         pygame.time.set_timer(MYEVENTTYPE, 25)
         while run:
@@ -127,11 +138,16 @@ class App:
                 self.hero.update((-10, 0))
             if keys[pygame.K_UP] and pygame.sprite.spritecollideany(self.hero, app.tiles_group):
                 self.hero.jump()
+                self.score += 1
             if self.hero.rect.y > 543:
                 run = False
                 self.end_screen()
 
-            self.screen.blit(fon, (0, 0))
+            self.camera.update(self.hero)
+            for sprite in self.all_sprites:
+                self.camera.apply(sprite)
+
+            self.screen.blit(self.fon, (0, 0))
             self.all_sprites.draw(self.screen)
             self.player_group.draw(self.screen)
             self.tiles_group.draw(self.screen)
@@ -163,18 +179,30 @@ class App:
                 if event.type == pygame.QUIT:
                     self.terminate()
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    return  # начинаем игру
+                    return
             pygame.display.flip()
             self.clock.tick(self.fps)
 
     def end_screen(self):
         pygame.mixer.music.pause()
         fon = pygame.transform.scale(self.load_image('game over 1.jpg'), (self.width, self.height - 100))
+        font = pygame.font.Font(None, 40)
+        text = font.render(f'Счёт: {self.score}', 1, (0, 0, 0))
+        fon.blit(text, (245, 30))
+        with open('data/best_result.txt') as f:
+            data = f.read()
+        if self.score > int(data):
+            data = self.score
+            with open('data/best_result.txt', 'w') as f_in:
+                f_in.write(str(self.score))
+        text = font.render(f'Лучший результат: {data}', 1, (0, 0, 0))
+        fon.blit(text, (160, 60))
         self.yes = Button('Yes', self.screen)
         self.no = Button('No', self.screen)
         self.screen.blit(fon, (0, 0))
         self.no.render(self.screen)
         self.yes.render(self.screen)
+        self.score = 0
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -184,9 +212,20 @@ class App:
                         self.terminate()
                     elif self.yes.check_click(event.pos):
                         self.run_game()
-
             pygame.display.flip()
             self.clock.tick(self.fps)
+
+
+class Camera:
+    def __init__(self, app):
+        self.dy = 0
+
+    def apply(self, obj):
+        obj.rect.y += self.dy
+
+    def update(self, target):
+        self.dx = -(target.rect.x + target.rect.w // 2 - app.width // 2)
+        self.dy = -(target.rect.y + target.rect.h // 2 - app.height // 2)
 
 
 if __name__ == '__main__':
