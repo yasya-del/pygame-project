@@ -1,16 +1,25 @@
 import os
 import sys
 import pygame
+import random
+
+
+D = {'easy': ['easy_level1.txt'],
+     'medium': [''],
+     'hard': ['']}
+
+class Coin(pygame.sprite.Sprite):
+    pass
 
 
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, app, pos_x, pos_y):
-        self.pos_x = pos_x
-        self.pos_y = pos_y
+    def __init__(self, app, pos_x, pos_y, n):
         super().__init__(app.all_sprites, app.tiles_group)
         self.image = app.load_image('platform.png')
-        self.rect = self.image.get_rect().move(
-            app.tile_width * pos_x, app.tile_height * pos_y)
+        self.n = n
+        self.x = pos_x
+        self.y = pos_y
+        self.rect = self.image.get_rect().move(self.x, self.y)
 
     def under_screen(self):
         return self.rect.y >= 600
@@ -20,7 +29,7 @@ class Hero(pygame.sprite.Sprite):
     def __init__(self, app, pos):
         self.app = app
         super().__init__(app.player_group, app.all_sprites)
-        self.image = self.app.load_image("bird.jpg")
+        self.image = self.app.load_image("bird.png")
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
         self.rect.x = pos[0]
@@ -33,7 +42,17 @@ class Hero(pygame.sprite.Sprite):
         self.rect.y += pos[1]
 
     def jump(self):
-        self.update((0, -13))
+        self.update((0, -30))
+
+    def on_platform(self):
+        for i in range(len(app.tiles)):
+            s = pygame.sprite.spritecollideany(self, app.tiles_group)
+            t = app.tiles
+            if (s and self.rect.x + 65 >  t[i][0] and self.rect.x <= t[i][0] + 65
+                    and self.rect.y < t[i][1]):
+                if s.x == t[i][0] and s.y == t[i][1] and s.n == i:
+                    return True
+        return False
 
 
 class Button():
@@ -62,6 +81,10 @@ class Button():
             return True
         return False
 
+    def level(self, pos):
+        if 373 > pos[1] > 227:
+            return True
+
 
 class App:
     def __init__(self):
@@ -71,12 +94,15 @@ class App:
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Прыгаем по платформам')
         pygame.mixer.music.load('data/music.mp3')
-        # pygame.key.set_repeat(200, 70)
+        pygame.key.set_repeat(200, 70)
         self.tile_width = 40
         self.tile_height = 60
         self.fps = 60
         self.score = 0
         self.camera = Camera(self)
+        self.count_platfroms = 0
+        self.dificulty = 'easy'
+        self.gravity = 0.7
 
     def terminate(self):
         pygame.quit()
@@ -109,8 +135,8 @@ class App:
         for y in range(len(level)):
             for x in range(len(level[y])):
                 if level[y][x] == '@':
-                    self.tiles_group.add(Tile(self, x, y))
-                    self.tiles.append([x, y])
+                    self.tiles_group.add(Tile(self, x * self.tile_width, y * self.tile_height, y))
+                    self.tiles.append([x * self.tile_width, y * self.tile_height])
         return x, y
 
     def run_game(self):
@@ -120,11 +146,11 @@ class App:
         self.player_group = pygame.sprite.Group()
         self.tiles = []
         level_x, level_y = self.generate_level(self.load_level('easy_level1.txt'))
-        x = self.tiles[9][0] * self.tile_width - 20
-        y = self.tiles[9][1] * self.tile_height - 50
+        x = self.tiles[9][0] - 20
+        y = self.tiles[9][1] - 50
         self.hero = Hero(self, (x, y))
         run = True
-        self.fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
+        fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
         MYEVENTTYPE = pygame.USEREVENT + 1
         pygame.time.set_timer(MYEVENTTYPE, 25)
         while run:
@@ -132,34 +158,53 @@ class App:
                 if event.type == pygame.QUIT:
                     self.terminate()
                 if event.type == MYEVENTTYPE:
-                    if not pygame.sprite.spritecollideany(self.hero, app.tiles_group):
+                    if not self.hero.on_platform():
                         self.hero.update((0, 5))
             keys = pygame.key.get_pressed()
             if keys[pygame.K_RIGHT]:
-                self.hero.update((10, 0))
+                self.hero.update((20, 0))
             if keys[pygame.K_LEFT]:
-                self.hero.update((-10, 0))
-            if keys[pygame.K_UP] and pygame.sprite.spritecollideany(self.hero, app.tiles_group):
+                self.hero.update((-20, 0))
+            if keys[pygame.K_UP] and self.hero.on_platform():
                 self.hero.jump()
-                self.score += 1
             if self.hero.rect.y > 543:
                 run = False
                 self.end_screen()
 
+            '''self.score += 1
+                            if self.score >= 100:
+                                self.dificulty = 'hard'
+                            elif self.score >= 50:
+                                self.dificulty = 'medium'
+                            for el in self.tiles_group:
+                                if el.under_screen():
+                                    s = D[self.dificulty]
+                                    print(s)
+                                    with open(f'levels/{random.choice(s)}') as f:
+                                        lvl = []
+                                        data = f.readlines()
+                                        lvl.append(data[9 - self.count_platfroms % 10].strip())
+                                        lvl += ['\n..............\n',
+                                                '..............\n',
+                                                '..............\n',
+                                                '..............\n',
+                                                '..............\n',
+                                                '..............\n',
+                                                '..............\n',
+                                                '..............\n',
+                                                '..............\n']
+                                        level_x, level_y = self.generate_level(lvl)
+                                        self.count_platfroms += 1
+                                        break'''
+
             self.camera.update(self.hero)
             for sprite in self.all_sprites:
                 self.camera.apply(sprite)
+                self.tiles = []
+                for el in self.tiles_group:
+                    self.tiles.append([el.rect.x, el.rect.y])
 
-            count_platfroms = 0
-            for el in self.tiles_group:
-                if el.under_screen():
-                    count_platfroms += 1
-            '''if count_platfroms > 5:
-                with open('levels/easy_level1.txt') as f:
-                    data = f.readlines()
-                    level_x, level_y = self.generate_level(data[count_platfroms % 5].strip())'''
-
-            self.screen.blit(self.fon, (0, 0))
+            self.screen.blit(fon, (0, 0))
             self.all_sprites.draw(self.screen)
             self.player_group.draw(self.screen)
             self.tiles_group.draw(self.screen)
@@ -170,11 +215,12 @@ class App:
         intro_text = ["        Правила игры",
                       "В игре вы должны продвигаться вверх",
                       "по платформам",
-                      "Игра заканчивается, когда вы упадёте"
-                      ' ', ' ', ' ', ' ', ' ', ' ', '    Чтобы начать, нажмите на пробел']
+                      "Игра заканчивается, когда вы упадёте"]
 
         fon = pygame.transform.scale(self.load_image('fon.jpg'), (self.width, self.height))
+        self.lvl = Button('', self.screen)
         self.screen.blit(fon, (0, 0))
+        self.lvl.render(self.screen)
         font = pygame.font.Font(None, 30)
         text_coord = 50
         for line in intro_text:
@@ -185,15 +231,18 @@ class App:
             intro_rect.x = 10
             text_coord += intro_rect.height
             self.screen.blit(string_rendered, intro_rect)
-
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.terminate()
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    return
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.lvl.level(event.pos):
+                        return
             pygame.display.flip()
             self.clock.tick(self.fps)
+
+    def choice_levels(self):
+        pass
 
     def end_screen(self):
         pygame.mixer.music.pause()
@@ -215,6 +264,7 @@ class App:
         self.no.render(self.screen)
         self.yes.render(self.screen)
         self.score = 0
+        self.count_platfroms = 0
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -224,6 +274,7 @@ class App:
                         self.terminate()
                     elif self.yes.check_click(event.pos):
                         self.run_game()
+
             pygame.display.flip()
             self.clock.tick(self.fps)
 
@@ -231,10 +282,11 @@ class App:
 class Camera:
     def __init__(self, app):
         self.dy = 0
+        self.app = app
 
     def apply(self, obj):
         if self.dy > 0:
-             obj.rect.y += self.dy
+            obj.rect.y += self.dy
 
     def update(self, target):
         self.dy = -(target.rect.y + target.rect.h // 2 - app.height // 2)
