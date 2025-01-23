@@ -1,11 +1,6 @@
 import os
-import random
 import sys
 import pygame
-
-D = {'easy': ['easy_level1.txt'],
-     'medium': [''],
-     'hard': ['']}
 
 
 class Tile(pygame.sprite.Sprite):
@@ -82,8 +77,6 @@ class App:
         self.fps = 60
         self.score = 0
         self.camera = Camera(self)
-        self.count_platfroms = 0
-        self.dificulty = 'easy'
 
     def terminate(self):
         pygame.quit()
@@ -148,31 +141,7 @@ class App:
                 self.hero.update((-10, 0))
             if keys[pygame.K_UP] and pygame.sprite.spritecollideany(self.hero, app.tiles_group):
                 self.hero.jump()
-            '''self.score += 1
-                if self.score >= 100:
-                    self.dificulty = 'hard'
-                elif self.score >= 50:
-                    self.dificulty = 'medium'
-                for el in self.tiles_group:
-                    if el.under_screen():
-                        s = D[self.dificulty]
-                        print(s)
-                        with open(f'levels/{random.choice(s)}') as f:
-                            lvl = []
-                            data = f.readlines()
-                            lvl.append(data[9 - self.count_platfroms % 10].strip())
-                            lvl += ['\n..............\n',
-                                    '..............\n',
-                                    '..............\n',
-                                    '..............\n',
-                                    '..............\n',
-                                    '..............\n',
-                                    '..............\n',
-                                    '..............\n',
-                                    '..............\n']
-                            level_x, level_y = self.generate_level(lvl)
-                            self.count_platfroms += 1
-                            break'''
+                self.score += 1
             if self.hero.rect.y > 543:
                 run = False
                 self.end_screen()
@@ -180,6 +149,15 @@ class App:
             self.camera.update(self.hero)
             for sprite in self.all_sprites:
                 self.camera.apply(sprite)
+
+            count_platfroms = 0
+            for el in self.tiles_group:
+                if el.under_screen():
+                    count_platfroms += 1
+            '''if count_platfroms > 5:
+                with open('levels/easy_level1.txt') as f:
+                    data = f.readlines()
+                    level_x, level_y = self.generate_level(data[count_platfroms % 5].strip())'''
 
             self.screen.blit(self.fon, (0, 0))
             self.all_sprites.draw(self.screen)
@@ -237,7 +215,6 @@ class App:
         self.no.render(self.screen)
         self.yes.render(self.screen)
         self.score = 0
-        self.count_platfroms = 0
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -254,11 +231,10 @@ class App:
 class Camera:
     def __init__(self, app):
         self.dy = 0
-        self.app = app
 
     def apply(self, obj):
         if self.dy > 0:
-            obj.rect.y += self.dy
+             obj.rect.y += self.dy
 
     def update(self, target):
         self.dy = -(target.rect.y + target.rect.h // 2 - app.height // 2)
