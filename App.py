@@ -188,6 +188,7 @@ class App:
     def choice_levels(self):
         pass
 
+
     def end_screen(self):
         fon = pygame.transform.scale(self.load_image('game over 1.jpg'), (self.width, self.height - 100))
         self.yes = Button('Yes', self.screen)
