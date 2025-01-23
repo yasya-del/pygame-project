@@ -12,6 +12,9 @@ class Tile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             app.tile_width * pos_x, app.tile_height * pos_y)
 
+    def under_screen(self):
+        return self.rect.y >= 600
+
 
 class Hero(pygame.sprite.Sprite):
     def __init__(self, app, pos):
@@ -147,6 +150,15 @@ class App:
             for sprite in self.all_sprites:
                 self.camera.apply(sprite)
 
+            count_platfroms = 0
+            for el in self.tiles_group:
+                if el.under_screen():
+                    count_platfroms += 1
+            '''if count_platfroms > 5:
+                with open('levels/easy_level1.txt') as f:
+                    data = f.readlines()
+                    level_x, level_y = self.generate_level(data[count_platfroms % 5].strip())'''
+
             self.screen.blit(self.fon, (0, 0))
             self.all_sprites.draw(self.screen)
             self.player_group.draw(self.screen)
@@ -221,10 +233,10 @@ class Camera:
         self.dy = 0
 
     def apply(self, obj):
-        obj.rect.y += self.dy
+        if self.dy > 0:
+             obj.rect.y += self.dy
 
     def update(self, target):
-        self.dx = -(target.rect.x + target.rect.w // 2 - app.width // 2)
         self.dy = -(target.rect.y + target.rect.h // 2 - app.height // 2)
 
 
