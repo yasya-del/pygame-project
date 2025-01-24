@@ -32,6 +32,7 @@ class Hero(pygame.sprite.Sprite):
         self.image = self.app.load_image("bird.png")
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
+        self.score = 0
         self.rect.x = pos[0]
         self.rect.y = pos[1]
         self.height = 57
@@ -48,11 +49,39 @@ class Hero(pygame.sprite.Sprite):
         for i in range(len(app.tiles)):
             s = pygame.sprite.spritecollideany(self, app.tiles_group)
             t = app.tiles
-            if (s and self.rect.x + 65 >  t[i][0] and self.rect.x <= t[i][0] + 65
-                    and self.rect.y < t[i][1]):
-                if s.x == t[i][0] and s.y == t[i][1] and s.n == i:
-                    return True
+            if (s and self.rect.x + 50 > s.x and self.rect.x <= s.x + 50
+                    and self.rect.y < s.y and s.n == i):
+                return True
         return False
+
+class Levels():
+    def __init__(self, n, screen):
+        self.size = 75
+        self.ind_x = 112.5
+        self.ind_y = 200
+
+    def render(self, screen):
+        for y in range(2):
+            for x in range(5):
+                pygame.draw.rect(screen, (0, 0, 0),
+                                 ((self.ind_x + x * self.size, self.ind_y + y * self.size),
+                                  (self.size, self.size)), 3)
+                font = pygame.font.Font(None, 50)
+                n = y * 5 + x + 1
+                text = font.render(f"{n}", True, (0, 0, 0))
+                screen.blit(text, (x * self.size + self.ind_x + 10, y * self.size + self.ind_y + 10))
+
+    def check_click(self, pos):
+        mpos_x = pos[0]
+        mpos_y = pos[1]
+        for y in range(2):
+            for x in range(5):
+                kx = x * self.size + self.ind_x
+                ky = y * self.size + self.ind_y
+                if (mpos_x > kx and mpos_x < kx + self.size and mpos_y > ky and mpos_y < ky + self.size):
+                    return y * 5 + x + 1
+        return False
+
 
 
 class Button():
@@ -93,7 +122,7 @@ class App:
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Прыгаем по платформам')
-        pygame.mixer.music.load('data/music.mp3')
+        # pygame.mixer.music.load('data/music.mp3')
         pygame.key.set_repeat(200, 70)
         self.tile_width = 40
         self.tile_height = 60
@@ -140,7 +169,7 @@ class App:
         return x, y
 
     def run_game(self):
-        pygame.mixer.music.play(-1)
+        # за
         self.all_sprites = pygame.sprite.Group()
         self.tiles_group = pygame.sprite.Group()
         self.player_group = pygame.sprite.Group()
@@ -203,7 +232,6 @@ class App:
                 self.tiles = []
                 for el in self.tiles_group:
                     self.tiles.append([el.rect.x, el.rect.y])
-
             self.screen.blit(fon, (0, 0))
             self.all_sprites.draw(self.screen)
             self.player_group.draw(self.screen)
@@ -237,12 +265,26 @@ class App:
                     self.terminate()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if self.lvl.level(event.pos):
-                        return
+                        self.choice_levels()
             pygame.display.flip()
             self.clock.tick(self.fps)
 
     def choice_levels(self):
-        pass
+        fon = pygame.transform.scale(self.load_image('fon_lvl.jpg'), (self.width, self.height))
+        self.screen.blit(fon, (0, 0))
+        self.lvls = Levels(1, self.screen)
+        self.lvls.render(self.screen)
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.lvls.check_click(event.pos):
+                        self.n = self.lvls.check_click(event.pos)
+                        self.run_game()
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
 
     def end_screen(self):
         pygame.mixer.music.pause()
