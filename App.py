@@ -19,7 +19,16 @@ class Coin(pygame.sprite.Sprite):
 
 
 class Flag(pygame.sprite.Sprite):
-    pass
+    def __init__(self, app, pos_x, pos_y):
+        super().__init__(app.all_sprites, app.flag_group)
+        self.app = app
+        self.image = app.load_image('flag.png')
+        self.x = pos_x
+        self.y = pos_y
+        self.rect = self.image.get_rect().move(self.x, self.y)
+
+    def complete(self):
+        self.app.level_complete()
 
 
 class Tile(pygame.sprite.Sprite):
@@ -57,8 +66,8 @@ class Hero(pygame.sprite.Sprite):
 
     def on_platform(self):
         for i in range(len(app.tiles)):
-            s = pygame.sprite.spritecollideany(self, app.tiles_group)
             t = app.tiles
+            s = pygame.sprite.spritecollideany(self, app.tiles_group)
             if (s and self.rect.x + 50 > s.x and self.rect.x <= s.x + 50
                     and self.rect.y < s.y and s.n == i):
                 return True
@@ -196,6 +205,7 @@ class App:
         self.tiles_group = pygame.sprite.Group()
         self.player_group = pygame.sprite.Group()
         self.coin_group = pygame.sprite.Group()
+        self.flag_group = pygame.sprite.Group()
         self.tiles = []
         self.line = 0
         for el in self.tiles_group:
@@ -219,11 +229,18 @@ class App:
                         self.hero.update((0, 5))
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_UP and self.hero.on_platform():
                     self.hero.jump()
-            keys = pygame.key.get_pressed()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
+                    self.hero.update((20, 0))
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
+                    self.hero.update((-20, 0))
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    run = False
+                    self.level_complete()
+            '''keys = pygame.key.get_pressed()
             if keys[pygame.K_RIGHT]:
                 self.hero.update((20, 0))
             if keys[pygame.K_LEFT]:
-                self.hero.update((-20, 0))
+                self.hero.update((-20, 0))'''
             if self.hero.rect.y > 543:
                 run = False
                 self.end_screen()
@@ -239,6 +256,7 @@ class App:
             self.player_group.draw(self.screen)
             self.tiles_group.draw(self.screen)
             self.coin_group.draw(self.screen)
+            self.flag_group.draw(self.screen)
             pygame.display.flip()
             self.clock.tick(self.fps)
 
@@ -321,6 +339,25 @@ class App:
                     elif self.yes.check_click(event.pos):
                         self.run_game()
 
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
+    def level_complete(self):
+        pygame.mixer.music.pause()
+        fon = pygame.transform.scale(self.load_image('level_complete.png'), (self.width, self.height))
+        font = pygame.font.Font(None, 60)
+        text = font.render('Next level', 1, (242, 227, 139))
+        fon.blit(text, (400, 550))
+        self.score = 0
+        self.count_platfroms = 0
+        self.screen.blit(fon, (0, 0))
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if 400 <= event.pos[0] <= 400 + text.get_width() and 550 <= event.pos[1] <= 550 + text.get_height():
+                        self.choice_levels()
             pygame.display.flip()
             self.clock.tick(self.fps)
 
