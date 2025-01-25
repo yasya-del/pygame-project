@@ -155,6 +155,8 @@ class App:
         pygame.key.set_repeat(200, 70)
         self.tile_width = 40
         self.tile_height = 60
+        self.flag_width = 40
+        self.flag_height = 60
         self.fps = 60
         self.score = 0
         self.camera = Camera(self)
@@ -191,11 +193,15 @@ class App:
         x, y = None, None
         n = 10
         if self.line + 10  >= len(level):
-            n = len(level - self.line)
+            n = len(level) - self.line
         for y in range(self.line, self.line + n, 1):
+            print(level[y])
             for x in range(len(level[y])):
                 if level[y][x] == '@':
                     self.tiles_group.add(Tile(self, x * self.tile_width, y * self.tile_height, y))
+                    self.tiles.append([x * self.tile_width, y * self.tile_height])
+                if level[y][x] == 'F':
+                    self.tiles_group.add(Flag(self, x * self.flag_width, y * self.flag_height))
                     self.tiles.append([x * self.tile_width, y * self.tile_height])
         return x, y
 
@@ -207,15 +213,15 @@ class App:
         self.coin_group = pygame.sprite.Group()
         self.flag_group = pygame.sprite.Group()
         self.tiles = []
+        self.coins = []
         self.line = 0
-        for el in self.tiles_group:
-            if el.under_screen():
-                self.line += 1
         self.LEVEL = self.load_level(f'level{self.level}.txt')
         level_x, level_y = self.generate_level(self.LEVEL)
         x = self.tiles[9][0] - 20
         y = self.tiles[9][1] - 50
         self.hero = Hero(self, (x, y))
+        self.coin = Coin(self, 300, 500)
+        self.coins.append(self.coin)
         run = True
         fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
         MYEVENTTYPE = pygame.USEREVENT + 1
@@ -233,14 +239,16 @@ class App:
                     self.hero.update((20, 0))
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
                     self.hero.update((-20, 0))
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    run = False
-                    self.level_complete()
-            '''keys = pygame.key.get_pressed()
-            if keys[pygame.K_RIGHT]:
-                self.hero.update((20, 0))
-            if keys[pygame.K_LEFT]:
-                self.hero.update((-20, 0))'''
+            for el in self.tiles_group:
+                if el.under_screen():
+                    self.line += 1
+            for el in self.coins:
+                if pygame.sprite.collide_mask(el, self.hero):
+                    el.rect = el.rect.move(600, 600)
+                    el.collect()
+            if pygame.sprite.spritecollideany(self.hero, self.flag_group):
+                run = False
+                self.level_complete()
             if self.hero.rect.y > 543:
                 run = False
                 self.end_screen()
@@ -327,6 +335,7 @@ class App:
         self.yes.render(self.screen)
         self.score = 0
         self.count_platfroms = 0
+        self.line = 0
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -350,6 +359,7 @@ class App:
         fon.blit(text, (400, 550))
         self.score = 0
         self.count_platfroms = 0
+        self.line = 0
         self.screen.blit(fon, (0, 0))
         while True:
             for event in pygame.event.get():
@@ -357,7 +367,8 @@ class App:
                     self.terminate()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if 400 <= event.pos[0] <= 400 + text.get_width() and 550 <= event.pos[1] <= 550 + text.get_height():
-                        self.choice_levels()
+                        self.level += 1
+                        self.run_game()
             pygame.display.flip()
             self.clock.tick(self.fps)
 
