@@ -62,14 +62,12 @@ class Hero(pygame.sprite.Sprite):
         self.rect.y += pos[1]
 
     def jump(self):
-        self.update((0, -40))
+        self.update((0, -60))
 
     def on_platform(self):
-        for i in range(len(app.tiles)):
-            t = app.tiles
-            s = pygame.sprite.spritecollideany(self, app.tiles_group)
-            if (s and self.rect.x + 50 > s.x and self.rect.x <= s.x + 50
-                    and self.rect.y < s.y and s.n == i):
+        for el in self.app.tiles:
+            if pygame.sprite.collide_mask(el, self.app.hero) and el.rect.y > self.app.hero.rect.y + 20\
+                    and el and self.app.hero.rect.x + 50 > el.x:
                 return True
         return False
 
@@ -192,17 +190,18 @@ class App:
     def generate_level(self, level):
         x, y = None, None
         n = 10
-        if self.line + 10  >= len(level):
-            n = len(level) - self.line
-        for y in range(self.line, self.line + n, 1):
-            print(level[y])
+        if self.line_now + 10  >= len(level):
+            n = len(level) - self.line_now
+        for y in range(self.line_now, self.line_now + n, 1):
             for x in range(len(level[y])):
                 if level[y][x] == '@':
-                    self.tiles_group.add(Tile(self, x * self.tile_width, y * self.tile_height, y))
-                    self.tiles.append([x * self.tile_width, y * self.tile_height])
+                    t = Tile(self, x * self.tile_width, y * self.tile_height, y)
+                    self.tiles_group.add(t)
+                    self.tiles.append(t)
+                    self.tiles_coords.append([x * self.tile_width, y * self.tile_height])
                 if level[y][x] == 'F':
                     self.tiles_group.add(Flag(self, x * self.flag_width, y * self.flag_height))
-                    self.tiles.append([x * self.tile_width, y * self.tile_height])
+                    self.tiles_coords.append([x * self.tile_width, y * self.tile_height])
         return x, y
 
     def run_game(self):
@@ -212,13 +211,15 @@ class App:
         self.player_group = pygame.sprite.Group()
         self.coin_group = pygame.sprite.Group()
         self.flag_group = pygame.sprite.Group()
+        self.tiles_coords = []
         self.tiles = []
         self.coins = []
-        self.line = 0
+        self.line_now = 0
         self.LEVEL = self.load_level(f'level{self.level}.txt')
         level_x, level_y = self.generate_level(self.LEVEL)
-        x = self.tiles[9][0] - 20
-        y = self.tiles[9][1] - 50
+        x = self.tiles_coords[9][0] - 20
+        y = self.tiles_coords[9][1] - 50
+        print(self.tiles_coords)
         self.hero = Hero(self, (x, y))
         self.coin = Coin(self, 300, 500)
         self.coins.append(self.coin)
@@ -227,6 +228,7 @@ class App:
         MYEVENTTYPE = pygame.USEREVENT + 1
         pygame.time.set_timer(MYEVENTTYPE, 25)
         while run:
+            self.line = 0
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.terminate()
@@ -236,9 +238,9 @@ class App:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_UP and self.hero.on_platform():
                     self.hero.jump()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-                    self.hero.update((20, 0))
+                    self.hero.update((30, 0))
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-                    self.hero.update((-20, 0))
+                    self.hero.update((-30, 0))
             for el in self.tiles_group:
                 if el.under_screen():
                     self.line += 1
@@ -256,9 +258,9 @@ class App:
             self.camera.update(self.hero)
             for sprite in self.all_sprites:
                 self.camera.apply(sprite)
-                self.tiles = []
+                self.tiles_coords = []
                 for el in self.tiles_group:
-                    self.tiles.append([el.rect.x, el.rect.y])
+                    self.tiles_coords.append([el.rect.x, el.rect.y])
             self.screen.blit(fon, (0, 0))
             self.all_sprites.draw(self.screen)
             self.player_group.draw(self.screen)
@@ -335,7 +337,7 @@ class App:
         self.yes.render(self.screen)
         self.score = 0
         self.count_platfroms = 0
-        self.line = 0
+        self.line_now = 0
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -359,7 +361,7 @@ class App:
         fon.blit(text, (400, 550))
         self.score = 0
         self.count_platfroms = 0
-        self.line = 0
+        self.line_now = 0
         self.screen.blit(fon, (0, 0))
         while True:
             for event in pygame.event.get():
@@ -379,7 +381,7 @@ class Camera:
         self.app = app
 
     def apply(self, obj):
-        if self.dy > 0 and not self.app.line + 10  >= len(self.app.LEVEL):
+        if self.dy > 0 and not self.app.line_now + 10 >= len(self.app.LEVEL):
             obj.rect.y += self.dy
 
     def update(self, target):
