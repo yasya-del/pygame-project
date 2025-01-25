@@ -44,6 +44,46 @@ class Tile(pygame.sprite.Sprite):
         return self.rect.y >= 600
 
 
+class Pause():
+    def __init__(self, screen):
+        self.font = pygame.font.Font(None, 50)
+        self.text = self.font.render('| |', 1, (150, 0, 200))
+        pygame.draw.rect(screen, (200, 162, 200), (540, 10, 50, 50), 0)
+        pygame.draw.rect(screen, (150, 0, 200), (540, 10, 50, 50), 4)
+        screen.blit(self.text, (551, 16))
+
+    def check_click(self, pos):
+        mpos_x = pos[0]
+        mpos_y = pos[1]
+        if mpos_x > 540 and mpos_x < 590 and mpos_y > 10 and mpos_y < 60:
+            return True
+        return False
+
+    def render(self, screen):
+        self.font = pygame.font.Font(None, 50)
+        self.text = self.font.render('Game on pause', 1, (0, 0, 0))
+        screen.blit(self.text, (200 + (200 - self.text.get_width()) // 2,
+                                100 + (50 - self.text.get_height()) // 2))
+        self.text = self.font.render('Continue?', 1, (0, 0, 0))
+        screen.blit(self.text, (200 + (200 - self.text.get_width()) // 2,
+                                150 + (50 - self.text.get_height()) // 2))
+        pygame.draw.rect(screen, (200, 162, 200), (125, 300, 150, 75), 0)
+        pygame.draw.rect(screen, (200, 162, 200), (300, 300, 150, 75), 0)
+        self.text = self.font.render('YES', 1, (0, 0, 0))
+        screen.blit(self.text, (165, 325))
+        self.text = self.font.render('NO', 1, (0, 0, 0))
+        screen.blit(self.text, (350, 325))
+
+    def check_click2(self, pos):
+        mpos_x = pos[0]
+        mpos_y = pos[1]
+        if mpos_x > 125 and mpos_x < 275 and mpos_y > 300 and mpos_y < 375:
+            return 1
+        elif mpos_x > 300 and mpos_x < 450 and mpos_y > 300 and mpos_y < 375:
+            return 2
+        return False
+
+
 class Hero(pygame.sprite.Sprite):
     def __init__(self, app, pos):
         self.app = app
@@ -62,12 +102,16 @@ class Hero(pygame.sprite.Sprite):
         self.rect.y += pos[1]
 
     def jump(self):
-        self.update((0, -60))
+        self.update((0, -70))
 
     def on_platform(self):
         for el in self.app.tiles:
             if pygame.sprite.collide_mask(el, self.app.hero) and el.rect.y > self.app.hero.rect.y + 20\
                     and el and self.app.hero.rect.x + 50 > el.x:
+                if self.score < len(app.tiles) - el.n - 1:
+                    self.score = len(app.tiles) - el.n - 1
+                if self.score + 1 == len(app.tiles):
+                    app.level_complete()
                 return True
         return False
 
@@ -77,6 +121,10 @@ class Levels():
         self.size = 75
         self.ind_x = 112.5
         self.ind_y = 200
+        self.font = pygame.font.Font(None, 50)
+        self.text = self.font.render('Choose level', 1, (0, 0, 0))
+        screen.blit(self.text, (200 + (200 - self.text.get_width()) // 2,
+                                100 + (50 - self.text.get_height()) // 2))
 
     def render(self, screen):
         for y in range(2):
@@ -204,8 +252,7 @@ class App:
                     self.tiles_coords.append([x * self.tile_width, y * self.tile_height])
         return x, y
 
-    def run_game(self):
-        pygame.mixer.music.play(-1)
+    def new_game(self):
         self.all_sprites = pygame.sprite.Group()
         self.tiles_group = pygame.sprite.Group()
         self.player_group = pygame.sprite.Group()
@@ -218,11 +265,15 @@ class App:
         self.LEVEL = self.load_level(f'level{self.level}.txt')
         level_x, level_y = self.generate_level(self.LEVEL)
         x = self.tiles_coords[9][0] - 20
-        y = self.tiles_coords[9][1] - 50
-        print(self.tiles_coords)
+        y = self.tiles_coords[9][1] - 55
+        # print(self.tiles_coords)
         self.hero = Hero(self, (x, y))
         self.coin = Coin(self, 300, 500)
         self.coins.append(self.coin)
+        self.run_game()
+
+    def run_game(self):
+        pygame.mixer.music.play(-1)
         run = True
         fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
         MYEVENTTYPE = pygame.USEREVENT + 1
@@ -235,12 +286,16 @@ class App:
                 if event.type == MYEVENTTYPE:
                     if not self.hero.on_platform():
                         self.hero.update((0, 5))
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_UP and self.hero.on_platform():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.pause.check_click(event.pos):
+                        self.gamepause()
+                keys = pygame.key.get_pressed()
+                if keys[pygame.K_RIGHT]:
+                    self.hero.update((10, 0))
+                if keys[pygame.K_LEFT]:
+                    self.hero.update((-10, 0))
+                if keys[pygame.K_UP] and self.hero.on_platform():
                     self.hero.jump()
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-                    self.hero.update((30, 0))
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-                    self.hero.update((-30, 0))
             for el in self.tiles_group:
                 if el.under_screen():
                     self.line += 1
@@ -262,6 +317,7 @@ class App:
                 for el in self.tiles_group:
                     self.tiles_coords.append([el.rect.x, el.rect.y])
             self.screen.blit(fon, (0, 0))
+            self.pause = Pause(self.screen)
             self.all_sprites.draw(self.screen)
             self.player_group.draw(self.screen)
             self.tiles_group.draw(self.screen)
@@ -312,7 +368,7 @@ class App:
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if self.lvls.check_click(event.pos):
                         self.level = self.lvls.check_click(event.pos)
-                        self.run_game()
+                        self.new_game()
             pygame.display.flip()
             self.clock.tick(self.fps)
 
@@ -320,14 +376,14 @@ class App:
         pygame.mixer.music.pause()
         fon = pygame.transform.scale(self.load_image('game over 1.jpg'), (self.width, self.height - 200))
         font = pygame.font.Font(None, 40)
-        text = font.render(f'Счёт: {self.score}', 1, (0, 0, 0))
+        text = font.render(f'Счёт: {self.hero.score}', 1, (0, 0, 0))
         fon.blit(text, (245, 30))
         with open('data/best_result.txt') as f:
             data = f.read()
-        if self.score > int(data):
-            data = self.score
+        if self.hero.score > int(data):
+            data = self.hero.score
             with open('data/best_result.txt', 'w') as f_in:
-                f_in.write(str(self.score))
+                f_in.write(str(self.hero.score))
         text = font.render(f'Лучший результат: {data}', 1, (0, 0, 0))
         fon.blit(text, (160, 60))
         self.yes = Button('Yes', self.screen)
@@ -348,7 +404,7 @@ class App:
                     elif self.no.check_click(event.pos):
                         self.terminate()
                     elif self.yes.check_click(event.pos):
-                        self.run_game()
+                        self.new_game()
 
             pygame.display.flip()
             self.clock.tick(self.fps)
@@ -371,6 +427,22 @@ class App:
                     if 400 <= event.pos[0] <= 400 + text.get_width() and 550 <= event.pos[1] <= 550 + text.get_height():
                         self.level += 1
                         self.run_game()
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
+    def gamepause(self):
+        fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
+        self.screen.blit(fon, (0, 0))
+        self.pause.render(self.screen)
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.pause.check_click2(event.pos) == 1:
+                        self.run_game()
+                    elif self.pause.check_click2(event.pos) == 2:
+                        self.start_screen()
             pygame.display.flip()
             self.clock.tick(self.fps)
 
