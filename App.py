@@ -326,6 +326,7 @@ class App:
             pygame.display.flip()
             self.clock.tick(self.fps)
 
+
     def start_screen(self):
         intro_text = ["        Правила игры",
                       "В игре вы должны продвигаться вверх",
