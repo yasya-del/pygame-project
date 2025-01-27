@@ -92,6 +92,7 @@ class Hero(pygame.sprite.Sprite):
         self.app = app
         super().__init__(app.player_group, app.all_sprites)
         self.image = self.app.load_image("bird.png")
+        self.img2 = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
         self.rect.x = pos[0]
@@ -99,9 +100,18 @@ class Hero(pygame.sprite.Sprite):
         self.score = 0
         self.height = 57
         self.width = 86
+        self.d = 'Right'
 
     def update(self, pos):
         self.rect.x += pos[0]
+        if pos[0] < 0:
+            if self.d == 'Right':
+                self.d = 'Left'
+                self.image = self.img2
+        elif pos[0] != 0:
+            if self.d == 'Left':
+                self.d = 'Right'
+                self.image = self.app.load_image('bird.png')
         self.rect.y += pos[1]
 
     def jump(self):
@@ -249,7 +259,7 @@ class App:
                     if level[y][x] == 'F':
                         self.flag_group.add(Flag(self, x * self.flag_width, y * self.flag_height))
                         self.tiles_coords.append([x * self.tile_width, y * self.tile_height])
-        elif self.line_now + 1 <= 30:
+        elif 9 + self.line_now + 1 <= 30:
             for y in range(9 + self.line_now, 9 + self.line_now + 1, 1):
                 for x in range(len(level[y])):
                     if level[y][x] == '@':
@@ -314,7 +324,7 @@ class App:
             if pygame.sprite.spritecollideany(self.hero, self.flag_group):
                 run = False
                 self.level_complete()
-            if self.hero.rect.y > 543:
+            if self.hero.rect.y > 600:
                 run = False
                 self.end_screen()
 
