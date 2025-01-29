@@ -127,6 +127,38 @@ class Hero(pygame.sprite.Sprite):
         return False
 
 
+
+class Particle(pygame.sprite.Sprite):
+    # сгенерируем частицы разного размера
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(app.par_sprites)
+        self.fire = [app.load_image("star.png")]
+        for scale in (5, 10, 20):
+            self.fire.append(pygame.transform.scale(self.fire[0], (scale, scale)))
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+
+        # у каждой частицы своя скорость — это вектор
+        self.velocity = [dx, dy]
+        # и свои координаты
+        self.rect.x, self.rect.y = pos
+
+        # гравитация будет одинаковой (значение константы)
+        self.gravity = 0.1
+
+    def update(self):
+        # применяем гравитационный эффект:
+        # движение с ускорением под действием гравитации
+        self.velocity[1] += self.gravity
+        # перемещаем частицу
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        # убиваем, если частица ушла за экран
+        if not self.rect.colliderect(app.screen_rect):
+            self.kill()
+
+
 class Levels():
     def __init__(self, n, screen):
         self.size = 75
@@ -209,6 +241,8 @@ class App:
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Прыгаем по платформам')
         pygame.mixer.music.load('data/music.mp3', 'data/money.mp3')
+        self.par_sprites = pygame.sprite.Group()
+        self.screen_rect = (0, 0, self.width, self.height)
         pygame.key.set_repeat(200, 70)
         self.tile_width = 40
         self.tile_height = 60
@@ -223,6 +257,14 @@ class App:
     def terminate(self):
         pygame.quit()
         sys.exit()
+
+    def create_particles(self, position):
+        # количество создаваемых частиц
+        particle_count = 20
+        # возможные скорости
+        numbers = range(-5, 6)
+        for _ in range(particle_count):
+            Particle(position, random.choice(numbers), random.choice(numbers))
 
     def load_image(self, name, colorkey=None):
         fullname = os.path.join('data', name)
@@ -457,6 +499,7 @@ class App:
                 f_in.write(str(self.hero.score))
         fon.blit(text, (400, 550))
         self.screen.blit(fon, (0, 0))
+        k = 0
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -465,8 +508,14 @@ class App:
                     if 400 <= event.pos[0] <= 400 + text.get_width() and 550 <= event.pos[1] <= 550 + text.get_height():
                         self.level += 1
                         self.new_game()
+            if k % 3 == 0:
+                self.create_particles((random.randrange(0, 600), random.randrange(0, 100)))
+            self.par_sprites.update()
+            self.screen.blit(fon, (0, 0))
+            self.par_sprites.draw(self.screen)
             pygame.display.flip()
             self.clock.tick(self.fps)
+            k += 1
 
     def gamepause(self):
         pygame.mixer.music.pause()
