@@ -91,7 +91,7 @@ class Hero(pygame.sprite.Sprite):
     def __init__(self, app, pos):
         self.app = app
         super().__init__(app.player_group, app.all_sprites)
-        self.image = self.app.load_image("yellow_bird.png", directory='skins')
+        self.image = self.app.load_image("bird.png")
         self.img2 = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
@@ -111,7 +111,7 @@ class Hero(pygame.sprite.Sprite):
         elif pos[0] != 0:
             if self.d == 'Left':
                 self.d = 'Right'
-                self.image = self.app.load_image('yellow_bird.png', directory='skins')
+                self.image = self.app.load_image('bird.png')
         self.rect.y += pos[1]
 
     def jump(self):
@@ -119,8 +119,8 @@ class Hero(pygame.sprite.Sprite):
 
     def on_platform(self):
         for el in self.app.tiles:
-            if pygame.sprite.collide_mask(el, self.app.hero) and el.rect.y > self.app.hero.rect.y + 15\
-                    and el and self.app.hero.rect.x + 40 > el.x:
+            if pygame.sprite.collide_mask(el, self.app.hero) and el.rect.y > self.app.hero.rect.y + 20\
+                    and el and self.app.hero.rect.x + 50 > el.x:
                 if self.score < len(app.tiles) - el.n - 1:
                     self.score = len(app.tiles) - el.n - 1
                 return True
@@ -224,8 +224,8 @@ class App:
         pygame.quit()
         sys.exit()
 
-    def load_image(self, name, colorkey=None, directory='data'):
-        fullname = os.path.join(directory, name)
+    def load_image(self, name, colorkey=None):
+        fullname = os.path.join('data', name)
         if not os.path.isfile(fullname):
             print(f"Файл с изображением '{fullname}' не найден")
             sys.exit()
@@ -259,7 +259,7 @@ class App:
                     if level[y][x] == 'F':
                         self.flag_group.add(Flag(self, x * self.flag_width, y * self.flag_height))
                         self.tiles_coords.append([x * self.tile_width, y * self.tile_height])
-        elif 9 + self.line_now + 1 <= len(level):
+        elif 9 + self.line_now + 1 <= 30:
             for y in range(9 + self.line_now, 9 + self.line_now + 1, 1):
                 for x in range(len(level[y])):
                     if level[y][x] == '@':
@@ -284,10 +284,6 @@ class App:
         self.line_now = 0
         self.score = 0
         self.count_platfroms = 0
-        fullname = f'levels/level{self.level}.txt'
-        if not os.path.isfile(fullname):
-            print('Упс, похоже вы прошли все уровни!')
-            sys.exit()
         self.LEVEL = self.load_level(f'level{self.level}.txt')
         level_x, level_y = self.generate_level(self.LEVEL)
         x = self.tiles_coords[-1][0] - 20
@@ -303,8 +299,6 @@ class App:
         fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
         MYEVENTTYPE = pygame.USEREVENT + 1
         pygame.time.set_timer(MYEVENTTYPE, 25)
-        EVENT_FOR_COINS = pygame.USEREVENT + 2
-        pygame.time.set_timer(EVENT_FOR_COINS, 300)
         while run:
             self.line = 0
             for event in pygame.event.get():
@@ -313,8 +307,6 @@ class App:
                 if event.type == MYEVENTTYPE:
                     if not self.hero.on_platform():
                         self.hero.update((0, 5))
-                if event.type == EVENT_FOR_COINS:
-                    self.coin_group.update()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if self.pause.check_click(event.pos):
                         self.gamepause()
@@ -332,7 +324,7 @@ class App:
             if pygame.sprite.spritecollideany(self.hero, self.flag_group):
                 run = False
                 self.level_complete()
-            if self.hero.rect.y > 580:
+            if self.hero.rect.y > 600:
                 run = False
                 self.end_screen()
 
