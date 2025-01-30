@@ -128,8 +128,6 @@ class Hero(pygame.sprite.Sprite):
 
 
 class Particle(pygame.sprite.Sprite):
-    # сгенерируем частицы разного размера
-
     def __init__(self, pos, dx, dy):
         super().__init__(app.par_sprites)
         self.fire = [app.load_image("star.png")]
@@ -137,22 +135,14 @@ class Particle(pygame.sprite.Sprite):
             self.fire.append(pygame.transform.scale(self.fire[0], (scale, scale)))
         self.image = random.choice(self.fire)
         self.rect = self.image.get_rect()
-
-        # у каждой частицы своя скорость — это вектор
         self.velocity = [dx, dy]
-        # и свои координаты
         self.rect.x, self.rect.y = pos
-
-        # гравитация будет одинаковой (значение константы)
         self.gravity = 0.1
 
     def update(self):
-        # применяем гравитационный эффект:
-        # движение с ускорением под действием гравитации
         self.velocity[1] += self.gravity
         self.rect.x += self.velocity[0]
         self.rect.y += self.velocity[1]
-        # убиваем, если частица ушла за экран
         if not self.rect.colliderect(app.screen_rect):
             self.kill()
 
@@ -168,6 +158,8 @@ class Levels():
                                 100 + (50 - self.text.get_height()) // 2))
 
     def render(self, screen):
+        ok = pygame.transform.scale(app.load_image('galochka.png'), (30, 30))
+        lock = pygame.transform.scale(app.load_image('lock.png'), (30, 30))
         for y in range(2):
             for x in range(5):
                 pygame.draw.rect(screen, (0, 0, 0),
@@ -177,16 +169,27 @@ class Levels():
                 n = y * 5 + x + 1
                 text = font.render(f"{n}", True, (0, 0, 0))
                 screen.blit(text, (x * self.size + self.ind_x + 10, y * self.size + self.ind_y + 10))
+                with open('data/completed_levels.txt') as f:
+                    data = f.readlines()
+                if str(n) in data:
+                    screen.blit(ok, (x * self.size + self.ind_x + 35, y * self.size + self.ind_y + 35))
+                elif str(n - 1) not in data:
+                    screen.blit(lock, (x * self.size + self.ind_x + 35, y * self.size + self.ind_y + 35))
 
     def check_click(self, pos):
         mpos_x = pos[0]
         mpos_y = pos[1]
+        with open('data/completed_levels.txt') as f:
+            data = f.readlines()
         for y in range(2):
             for x in range(5):
+                n = y * 5 + x + 1
                 kx = x * self.size + self.ind_x
                 ky = y * self.size + self.ind_y
                 if (mpos_x > kx and mpos_x < kx + self.size and mpos_y > ky and mpos_y < ky + self.size):
-                    return y * 5 + x + 1
+                    if str(n - 1) in data or n == 1:
+                        return n
+                    return 'NO'
         return False
 
 
@@ -442,9 +445,11 @@ class App:
                 if event.type == pygame.QUIT:
                     self.terminate()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if self.lvls.check_click(event.pos):
+                    if type(self.lvls.check_click(event.pos)) == int:
                         self.level = self.lvls.check_click(event.pos)
                         self.new_game()
+                    elif self.lvls.check_click(event.pos) == 'NO':
+                        pass
             pygame.display.flip()
             self.clock.tick(self.fps)
 
@@ -487,6 +492,8 @@ class App:
         fon = pygame.transform.scale(self.load_image('level_complete.png'), (self.width, self.height))
         font = pygame.font.Font(None, 60)
         text = font.render('Next level', 1, (242, 227, 139))
+        with open('data/completed_levels.txt', 'a') as f:
+            f.write(str(self.level))
         with open('data/best_result.txt') as f:
             data = f.read()
         if self.hero.score > int(data):
