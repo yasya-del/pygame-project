@@ -67,23 +67,29 @@ class Pause():
         self.text = self.font.render('Game on pause', 1, (0, 0, 0))
         screen.blit(self.text, (200 + (200 - self.text.get_width()) // 2,
                                 100 + (50 - self.text.get_height()) // 2))
-        self.text = self.font.render('Continue?', 1, (0, 0, 0))
-        screen.blit(self.text, (200 + (200 - self.text.get_width()) // 2,
-                                150 + (50 - self.text.get_height()) // 2))
-        pygame.draw.rect(screen, (200, 162, 200), (125, 300, 150, 75), 0)
-        pygame.draw.rect(screen, (200, 162, 200), (300, 300, 150, 75), 0)
-        self.text = self.font.render('YES', 1, (0, 0, 0))
-        screen.blit(self.text, (165, 325))
-        self.text = self.font.render('NO', 1, (0, 0, 0))
-        screen.blit(self.text, (350, 325))
+        pygame.draw.rect(screen, (200, 162, 200), (165, 150, 235, 75), 0)
+        pygame.draw.rect(screen, (200, 162, 200), (165, 240, 235, 75), 0)
+        pygame.draw.rect(screen, (200, 162, 200), (165, 330, 235, 75), 0)
+        self.text = self.font.render('Continue', 1, (0, 0, 0))
+        screen.blit(self.text, (165 + (235 - self.text.get_width()) // 2,
+                                155+ (75 - self.text.get_height()) // 2))
+        self.text = self.font.render('Change level', 1, (0, 0, 0))
+        screen.blit(self.text, (165 + (235 - self.text.get_width()) // 2,
+                                250 + (75 - self.text.get_height()) // 2))
+        self.text = self.font.render('Back to Menu', 1, (0, 0, 0))
+        screen.blit(self.text, (165 + (235 - self.text.get_width()) // 2,
+                                335 + (75 - self.text.get_height()) // 2))
+
 
     def check_click2(self, pos):
         mpos_x = pos[0]
         mpos_y = pos[1]
-        if mpos_x > 125 and mpos_x < 275 and mpos_y > 300 and mpos_y < 375:
+        if mpos_x > 165 and mpos_x < 400 and mpos_y > 150 and mpos_y < 225:
             return 1
-        elif mpos_x > 300 and mpos_x < 450 and mpos_y > 300 and mpos_y < 375:
+        elif mpos_x > 165 and mpos_x < 400 and mpos_y > 240 and mpos_y < 315:
             return 2
+        elif mpos_x > 165 and mpos_x < 400 and mpos_y > 330 and mpos_y < 405:
+            return 3
         return False
 
 
@@ -171,10 +177,12 @@ class Levels():
                 screen.blit(text, (x * self.size + self.ind_x + 10, y * self.size + self.ind_y + 10))
                 with open('data/completed_levels.txt') as f:
                     data = f.readlines()
-                if str(n) in data:
+                if str(n) + '\n' in data:
                     screen.blit(ok, (x * self.size + self.ind_x + 35, y * self.size + self.ind_y + 35))
-                elif str(n - 1) not in data:
+                elif str(n - 1) not in data and n != 1:
                     screen.blit(lock, (x * self.size + self.ind_x + 35, y * self.size + self.ind_y + 35))
+        back = pygame.transform.scale(app.load_image('back.png'), (50, 50))
+        screen.blit(back, (540, 540))
 
     def check_click(self, pos):
         mpos_x = pos[0]
@@ -190,6 +198,8 @@ class Levels():
                     if str(n - 1) in data or n == 1:
                         return n
                     return 'NO'
+        if mpos_x > 540 and mpos_x < 590 and mpos_y > 540 and mpos_y < 590:
+            return 4
         return False
 
 
@@ -452,7 +462,10 @@ class App:
                     self.terminate()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if type(self.lvls.check_click(event.pos)) == int:
-                        self.level = self.lvls.check_click(event.pos)
+                        if self.lvls.check_click(event.pos) == 4:
+                            self.start_screen()
+                        else:
+                            self.level = self.lvls.check_click(event.pos)
                         self.new_game()
                     elif self.lvls.check_click(event.pos) == 'NO':
                         pass
@@ -499,7 +512,7 @@ class App:
         font = pygame.font.Font(None, 60)
         text = font.render('Next level', 1, (242, 227, 139))
         with open('data/completed_levels.txt', 'a') as f:
-            f.write(str(self.level))
+            f.write(str(self.level) + '\n')
         with open('data/best_result.txt') as f:
             data = f.read()
         if self.hero.score > int(data):
@@ -539,6 +552,8 @@ class App:
                     if self.pause.check_click2(event.pos) == 1:
                         self.run_game()
                     elif self.pause.check_click2(event.pos) == 2:
+                        self.choice_levels()
+                    elif self.pause.check_click2(event.pos) == 3:
                         self.start_screen()
             pygame.display.flip()
             self.clock.tick(self.fps)
