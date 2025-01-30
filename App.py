@@ -282,10 +282,13 @@ class App:
 
     def load_level(self, filename):
         filename = "levels/" + filename
-        with open(filename, 'r') as mapFile:
-            level_map = [line.strip() for line in mapFile]
-        max_width = max(map(len, level_map))
-        return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+        try:
+            with open(filename, 'r') as mapFile:
+                level_map = [line.strip() for line in mapFile]
+            max_width = max(map(len, level_map))
+            return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+        except FileNotFoundError:
+            print('Поздравляю, похоже вы прошли все уровни! Перейпройдёте игру?')
 
     def generate_level(self, level):
         x, y = None, None
@@ -300,7 +303,7 @@ class App:
                     if level[y][x] == 'F':
                         self.flag_group.add(Flag(self, x * self.flag_width, y * self.flag_height))
                         self.tiles_coords.append([x * self.tile_width, y * self.tile_height])
-        elif 9 + self.line_now + 1 <= 30:
+        elif 9 + self.line_now + 1 <= len(level):
             for y in range(9 + self.line_now, 9 + self.line_now + 1, 1):
                 for x in range(len(level[y])):
                     if level[y][x] == '@':
@@ -326,7 +329,10 @@ class App:
         self.score = 0
         self.count_platfroms = 0
         self.LEVEL = self.load_level(f'level{self.level}.txt')
-        level_x, level_y = self.generate_level(self.LEVEL)
+        if self.LEVEL:
+            level_x, level_y = self.generate_level(self.LEVEL)
+        else:
+            sys.exit()
         x = self.tiles_coords[-1][0] - 20
         y = self.tiles_coords[-1][1] - 55
         self.hero = Hero(self, (x, y))
