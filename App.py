@@ -204,6 +204,13 @@ class Levels():
             return 4
         return False
 
+    def ok(self, pos):
+        mpos_x = pos[0]
+        mpos_y = pos[1]
+        if mpos_x > 510 and mpos_y > 370 and mpos_x < 550 and mpos_y < 400:
+            return True
+        return False
+
 
 class Button():
     def __init__(self, s, screen):
@@ -489,7 +496,25 @@ class App:
                             self.level = self.lvls.check_click(event.pos)
                         self.new_game()
                     elif self.lvls.check_click(event.pos) == 'NO':
-                        pass
+                        self.pr_lvl()
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
+    def pr_lvl(self):
+        image = pygame.transform.scale(self.load_image('for_lvls.jpg'), (500, 200))
+        self.screen.blit(image, (50, 200))
+        self.font = pygame.font.Font(None, 30)
+        self.text = self.font.render('OK', 1, (0, 0, 0))
+        pygame.draw.rect(self.screen, (19, 186, 255), (510, 370, 40, 30), 0)
+        self.screen.blit(self.text, (510 + (40 - self.text.get_width()) // 2,
+                                     370 + (30 - self.text.get_height()) // 2))
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.lvls.ok(event.pos):
+                        self.choice_levels()
             pygame.display.flip()
             self.clock.tick(self.fps)
 
