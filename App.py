@@ -179,7 +179,7 @@ class Levels():
                     data = f.readlines()
                 if str(n) + '\n' in data:
                     screen.blit(ok, (x * self.size + self.ind_x + 35, y * self.size + self.ind_y + 35))
-                elif str(n - 1) not in data and n != 1:
+                elif str(n - 1) + '\n' not in data and n != 1:
                     screen.blit(lock, (x * self.size + self.ind_x + 35, y * self.size + self.ind_y + 35))
         back = pygame.transform.scale(app.load_image('back.png'), (50, 50))
         screen.blit(back, (540, 540))
@@ -195,7 +195,7 @@ class Levels():
                 kx = x * self.size + self.ind_x
                 ky = y * self.size + self.ind_y
                 if (mpos_x > kx and mpos_x < kx + self.size and mpos_y > ky and mpos_y < ky + self.size):
-                    if str(n - 1) in data or n == 1:
+                    if str(n - 1) + '\n' in data or n == 1:
                         return n
                     return 'NO'
         if mpos_x > 540 and mpos_x < 590 and mpos_y > 540 and mpos_y < 590:
@@ -430,6 +430,8 @@ class App:
         fon = pygame.transform.scale(self.load_image('fon.jpg'), (self.width, self.height))
         self.lvl = Button('', self.screen)
         self.screen.blit(fon, (0, 0))
+        skins = pygame.transform.scale(self.load_image('skins.jpg'), (200, 75))
+        self.screen.blit(skins, (390, 515))
         self.lvl.render(self.screen)
         font = pygame.font.Font(None, 30)
         text_coord = 50
