@@ -11,11 +11,13 @@ class Coin(pygame.sprite.Sprite):
         self.x = pos_x
         self.y = pos_y
         self.rect = self.image.get_rect().move(self.x, self.y)
+        self.app = app
 
     def collect(self):
         sound = pygame.mixer.Sound('data/money.mp3')
         empty_channel = pygame.mixer.find_channel()
         empty_channel.play(sound)
+        self.app.balance += 1
 
 
 class Flag(pygame.sprite.Sprite):
@@ -259,6 +261,8 @@ class App:
         self.tile_height = 60
         self.flag_width = 40
         self.flag_height = 60
+        self.coin_width = 40
+        self.coin_height = 60
         self.fps = 60
         self.score = 0
         self.camera = Camera(self)
@@ -313,6 +317,14 @@ class App:
                     if level[y][x] == 'F':
                         self.flag_group.add(Flag(self, x * self.flag_width, y * self.flag_height))
                         self.tiles_coords.append([x * self.tile_width, y * self.tile_height])
+                    if level[y][x] == '$':
+                        t = Tile(self, x * self.tile_width, y * self.tile_height, y)
+                        self.tiles_group.add(t)
+                        self.tiles.append(t)
+                        self.tiles_coords.append([x * self.tile_width, y * self.tile_height])
+                        c = Coin(self, x * self.coin_width, y * self.coin_height - 40)
+                        self.coin_group.add(c)
+                        self.coins.append(c)
         elif 9 + self.line_now + 1 <= len(level):
             for y in range(9 + self.line_now, 9 + self.line_now + 1, 1):
                 for x in range(len(level[y])):
@@ -324,6 +336,14 @@ class App:
                     if level[y][x] == 'F':
                         self.flag_group.add(Flag(self, x * self.flag_width, 1 * self.flag_height))
                         self.tiles_coords.append([x * self.tile_width, 1 * self.tile_height])
+                    if level[y][x] == '$':
+                        t = Tile(self, x * self.tile_width, 1 * self.tile_height, 1)
+                        self.tiles_group.add(t)
+                        self.tiles.append(t)
+                        self.tiles_coords.append([x * self.tile_width, 1 * self.tile_height])
+                        c = Coin(self, x * self.coin_width, 1 * self.coin_height - 40)
+                        self.coin_group.add(c)
+                        self.coins.append(c)
         return x, y
 
     def new_game(self):
@@ -337,6 +357,7 @@ class App:
         self.coins = []
         self.line_now = 0
         self.score = 0
+        self.balance = 0
         self.count_platfroms = 0
         self.LEVEL = self.load_level(f'level{self.level}.txt')
         if self.LEVEL:
@@ -346,8 +367,6 @@ class App:
         x = self.tiles_coords[-1][0] - 20
         y = self.tiles_coords[-1][1] - 55
         self.hero = Hero(self, (x, y))
-        self.coin = Coin(self, 300, 500)
-        self.coins.append(self.coin)
         self.run_game()
 
     def run_game(self):
@@ -381,7 +400,7 @@ class App:
             if pygame.sprite.spritecollideany(self.hero, self.flag_group):
                 run = False
                 self.level_complete()
-            if self.hero.rect.y > 600:
+            if self.hero.rect.y > 580:
                 run = False
                 self.end_screen()
 
@@ -519,6 +538,8 @@ class App:
             data = self.hero.score
             with open('data/best_result.txt', 'w') as f_in:
                 f_in.write(str(self.hero.score))
+        with open('data/balance.txt', 'w') as f_in:
+            f_in.write(str(self.balance))
         fon.blit(text, (400, 550))
         self.screen.blit(fon, (0, 0))
         k = 0
@@ -538,7 +559,6 @@ class App:
             pygame.display.flip()
             self.clock.tick(self.fps)
             k += 1
-
 
     def gamepause(self):
         pygame.mixer.music.pause()
