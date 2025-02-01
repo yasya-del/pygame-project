@@ -96,10 +96,11 @@ class Pause():
 
 
 class Hero(pygame.sprite.Sprite):
-    def __init__(self, app, pos):
+    def __init__(self, app, pos, skin):
         self.app = app
         super().__init__(app.player_group, app.all_sprites)
-        self.image = self.app.load_image("yellow_bird.png", directory='skins')
+        self.skin = skin
+        self.image = pygame.transform.scale(self.app.load_image(self.skin, directory='skin_images'), (60, 60))
         self.img2 = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
@@ -119,7 +120,7 @@ class Hero(pygame.sprite.Sprite):
         elif pos[0] != 0:
             if self.d == 'Left':
                 self.d = 'Right'
-                self.image = self.app.load_image('yellow_bird.png', directory='skins')
+                self.image = pygame.transform.scale(self.app.load_image(self.skin, directory='skin_images'), (60, 60))
         self.rect.y += pos[1]
 
     def jump(self):
@@ -211,6 +212,9 @@ class Levels():
             return True
         return False
 
+    def skins(self, pos):
+        return 390 <= pos[0] <= 590 and 515 <= pos[1] <= 590
+
 
 class Button():
     def __init__(self, s, screen):
@@ -252,6 +256,9 @@ class Button():
         if 373 > pos[1] > 227:
             return True
 
+    def skins(self, pos):
+        return 390 <= pos[0] <= 590 and 515 <= pos[1] <= 590
+
 
 class App:
     def __init__(self):
@@ -273,8 +280,8 @@ class App:
         self.fps = 60
         self.score = 0
         self.camera = Camera(self)
-        self.dificulty = 'easy'
         self.gravity = 0.7
+        self.skin = '1.png'
 
     def terminate(self):
         pygame.quit()
@@ -373,7 +380,7 @@ class App:
             sys.exit()
         x = self.tiles_coords[-1][0] - 20
         y = self.tiles_coords[-1][1] - 55
-        self.hero = Hero(self, (x, y))
+        self.hero = Hero(self, (x, y), self.skin)
         self.run_game()
 
     def run_game(self):
@@ -476,6 +483,8 @@ class App:
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if self.lvl.level(event.pos):
                         self.choice_levels()
+                    elif self.lvl.skins(event.pos):
+                        self.choice_skins()
             pygame.display.flip()
             self.clock.tick(self.fps)
 
@@ -497,6 +506,39 @@ class App:
                         self.new_game()
                     elif self.lvls.check_click(event.pos) == 'NO':
                         self.pr_lvl()
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
+    def choice_skins(self):
+        fon = pygame.transform.scale(self.load_image('fon_lvl.jpg'), (self.width, self.height))
+        self.screen.blit(fon, (0, 0))
+        font = pygame.font.Font(None, 50)
+        text = font.render('Choose skin', 1, (0, 0, 0))
+        self.screen.blit(text, (200 + (200 - text.get_width()) // 2,
+                                20 + (50 - text.get_height()) // 2))
+        for file in os.listdir('skin_images'):
+            n = int(file.split('.')[0])
+            img = pygame.transform.scale(app.load_image(file, directory='skin_images'), (100, 100))
+            self.screen.blit(img, (100 * (n // 6), 50 + 100 * ((n - 1) % 6)))
+        MYEVENTTYPE = pygame.USEREVENT + 1
+        pygame.time.set_timer(MYEVENTTYPE, 25)
+        while True:
+            ok = pygame.transform.scale(app.load_image('galochka.png'), (30, 30))
+            self.screen.blit(ok, (100, 50))
+            lock = pygame.transform.scale(app.load_image('lock.png'), (30, 30))
+            back = pygame.transform.scale(app.load_image('back.png'), (50, 50))
+            self.screen.blit(back, (540, 540))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if 540 <= event.pos[0] <= 590 and 540 <= event.pos[1] <= 590:
+                        self.start_screen()
+                    else:
+                        n = event.pos[0] // 100 + (50 + event.pos[1]) // 100
+                        self.screen.blit(ok,(100 * (n // 6) + 100, 50 + 100 * ((n - 1) % 6)))
+                        if n != 0:
+                            self.skin = f'{n}.png'
             pygame.display.flip()
             self.clock.tick(self.fps)
 
