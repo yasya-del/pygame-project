@@ -82,7 +82,6 @@ class Pause():
         screen.blit(self.text, (165 + (235 - self.text.get_width()) // 2,
                                 335 + (75 - self.text.get_height()) // 2))
 
-
     def check_click2(self, pos):
         mpos_x = pos[0]
         mpos_y = pos[1]
@@ -216,6 +215,19 @@ class Levels():
         return 390 <= pos[0] <= 590 and 515 <= pos[1] <= 590
 
 
+class Tick(pygame.sprite.Sprite):
+    def __init__(self, app):
+        super().__init__(app.tick_group)
+        self.image = pygame.transform.scale(app.load_image('galochka.png'), (30, 30))
+        self.rect = self.image.get_rect()
+        self.rect.x = 100
+        self.rect.y = 50
+
+    def update(self, pos):
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+
+
 class Button():
     def __init__(self, s, screen):
         self.s = s
@@ -282,6 +294,8 @@ class App:
         self.camera = Camera(self)
         self.gravity = 0.7
         self.skin = '1.png'
+        self.tick_group = pygame.sprite.Group()
+        self.tick = Tick(self)
 
     def terminate(self):
         pygame.quit()
@@ -510,24 +524,27 @@ class App:
             self.clock.tick(self.fps)
 
     def choice_skins(self):
-        fon = pygame.transform.scale(self.load_image('fon_lvl.jpg'), (self.width, self.height))
-        self.screen.blit(fon, (0, 0))
+        self.fon = pygame.transform.scale(self.load_image('fon_lvl.jpg'), (self.width, self.height))
+        self.screen.blit(self.fon, (0, 0))
+        lock = pygame.transform.scale(app.load_image('lock.png'), (30, 30))
         font = pygame.font.Font(None, 50)
-        text = font.render('Choose skin', 1, (0, 0, 0))
-        self.screen.blit(text, (200 + (200 - text.get_width()) // 2,
-                                20 + (50 - text.get_height()) // 2))
+        self.back = pygame.transform.scale(app.load_image('back.png'), (50, 50))
+        with open('data/balance.txt') as f:
+            data = f.read()
+        with open('data/bought_skins.txt') as f:
+            self.bought = f.readlines()
+        text = font.render(f'Balance: {data}', 1, (0, 0, 0))
+        self.screen.blit(text, (185 + (200 - text.get_width()) // 2,
+                                10 + (50 - text.get_height()) // 2))
         for file in os.listdir('skin_images'):
             n = int(file.split('.')[0])
             img = pygame.transform.scale(app.load_image(file, directory='skin_images'), (100, 100))
-            self.screen.blit(img, (100 * (n // 6), 50 + 100 * ((n - 1) % 6)))
+            self.screen.blit(img, (300 * (n // 6), 50 + 100 * ((n - 1) % 5)))
+            if str(n) + '\n' not in self.bought:
+                self.screen.blit(lock, (300 * (n // 6), 50 + 100 * ((n - 1) % 5)))
         MYEVENTTYPE = pygame.USEREVENT + 1
         pygame.time.set_timer(MYEVENTTYPE, 25)
         while True:
-            ok = pygame.transform.scale(app.load_image('galochka.png'), (30, 30))
-            self.screen.blit(ok, (100, 50))
-            lock = pygame.transform.scale(app.load_image('lock.png'), (30, 30))
-            back = pygame.transform.scale(app.load_image('back.png'), (50, 50))
-            self.screen.blit(back, (540, 540))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.terminate()
@@ -535,10 +552,26 @@ class App:
                     if 540 <= event.pos[0] <= 590 and 540 <= event.pos[1] <= 590:
                         self.start_screen()
                     else:
-                        n = event.pos[0] // 100 + (50 + event.pos[1]) // 100
-                        self.screen.blit(ok,(100 * (n // 6) + 100, 50 + 100 * ((n - 1) % 6)))
-                        if n != 0:
-                            self.skin = f'{n}.png'
+                        n = event.pos[0] // 300 * 5 + (50 + event.pos[1]) // 100
+                        if str(n) + '\n' in self.bought:
+                            self.tick.update((300 * (n // 6) + 100, 50 + 100 * ((n - 1) % 5)))
+                            if n != 0:
+                                self.skin = f'{n}.png'
+                if event.type == MYEVENTTYPE:
+                    self.screen.blit(self.fon, (0, 0))
+                    self.screen.blit(self.back, (540, 540))
+                    with open('data/balance.txt') as f:
+                        data = f.read()
+                    text = font.render(f'Balance: {data}', 1, (0, 0, 0))
+                    self.screen.blit(text, (185 + (200 - text.get_width()) // 2,
+                                            10 + (50 - text.get_height()) // 2))
+                    for file in os.listdir('skin_images'):
+                        n = int(file.split('.')[0])
+                        img = pygame.transform.scale(app.load_image(file, directory='skin_images'), (100, 100))
+                        self.screen.blit(img, (300 * (n // 6), 50 + 100 * ((n - 1) % 5)))
+                        if str(n) + '\n' not in self.bought:
+                            self.screen.blit(lock, (300 * (n // 6), 50 + 100 * ((n - 1) % 5)))
+            self.tick_group.draw(self.screen)
             pygame.display.flip()
             self.clock.tick(self.fps)
 
