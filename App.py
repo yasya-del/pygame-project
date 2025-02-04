@@ -43,7 +43,7 @@ class Tile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(self.x, self.y)
 
     def under_screen(self):
-        return self.rect.y >= 600
+        return self.rect.y > 600
 
     def update(self, n):
         self.n = n
@@ -127,7 +127,7 @@ class Hero(pygame.sprite.Sprite):
 
     def on_platform(self):
         for el in self.app.tiles:
-            if pygame.sprite.collide_mask(el, self.app.hero) and el.rect.y > self.app.hero.rect.y + 20\
+            if pygame.sprite.collide_mask(el, self.app.hero) and el.rect.y > self.app.hero.rect.y + 40\
                     and el and self.app.hero.rect.x + 50 > el.x:
                 if self.score < len(app.tiles) - el.n - 1:
                     self.score = len(app.tiles) - el.n - 1
@@ -296,6 +296,9 @@ class App:
         self.skin = '1.png'
         self.tick_group = pygame.sprite.Group()
         self.tick = Tick(self)
+        with open ('data/balance.txt',) as f:
+            self.balance = int(f.read())
+        self.pr_line = 0
 
     def terminate(self):
         pygame.quit()
@@ -385,7 +388,6 @@ class App:
         self.coins = []
         self.line_now = 0
         self.score = 0
-        self.balance = 0
         self.count_platfroms = 0
         self.LEVEL = self.load_level(f'level{self.level}.txt')
         if self.LEVEL:
@@ -453,9 +455,10 @@ class App:
                     else:
                         self.line += 1
             if self.line_now != self.line:
-                self.line_now = self.line
+                self.pr_line = self.line_now
                 for el in self.tiles:
-                    el.update(el.n - 1)
+                    el.update(el.n - (self.line - self.line_now))
+                self.line_now = self.line
                 level_x, level_y = self.generate_level(self.LEVEL)
 
             self.screen.blit(fon, (0, 0))
@@ -529,6 +532,7 @@ class App:
         lock = pygame.transform.scale(app.load_image('lock.png'), (30, 30))
         font = pygame.font.Font(None, 50)
         self.back = pygame.transform.scale(app.load_image('back.png'), (50, 50))
+        self.screen.blit(self.back, (540, 540))
         with open('data/balance.txt') as f:
             data = f.read()
         with open('data/bought_skins.txt') as f:
@@ -557,21 +561,62 @@ class App:
                             self.tick.update((300 * (n // 6) + 100, 50 + 100 * ((n - 1) % 5)))
                             if n != 0:
                                 self.skin = f'{n}.png'
-                if event.type == MYEVENTTYPE:
-                    self.screen.blit(self.fon, (0, 0))
-                    self.screen.blit(self.back, (540, 540))
-                    with open('data/balance.txt') as f:
-                        data = f.read()
-                    text = font.render(f'Balance: {data}', 1, (0, 0, 0))
-                    self.screen.blit(text, (185 + (200 - text.get_width()) // 2,
-                                            10 + (50 - text.get_height()) // 2))
-                    for file in os.listdir('skin_images'):
-                        n = int(file.split('.')[0])
-                        img = pygame.transform.scale(app.load_image(file, directory='skin_images'), (100, 100))
-                        self.screen.blit(img, (300 * (n // 6), 50 + 100 * ((n - 1) % 5)))
-                        if str(n) + '\n' not in self.bought:
-                            self.screen.blit(lock, (300 * (n // 6), 50 + 100 * ((n - 1) % 5)))
+                            self.screen.blit(self.fon, (0, 0))
+                            self.screen.blit(self.back, (540, 540))
+                            with open('data/balance.txt') as f:
+                                data = f.read()
+                            text = font.render(f'Balance: {data}', 1, (0, 0, 0))
+                            self.screen.blit(text, (185 + (200 - text.get_width()) // 2,
+                                                    10 + (50 - text.get_height()) // 2))
+                            for file in os.listdir('skin_images'):
+                                n = int(file.split('.')[0])
+                                img = pygame.transform.scale(app.load_image(file, directory='skin_images'), (100, 100))
+                                self.screen.blit(img, (300 * (n // 6), 50 + 100 * ((n - 1) % 5)))
+                                if str(n) + '\n' not in self.bought:
+                                    self.screen.blit(lock, (300 * (n // 6), 50 + 100 * ((n - 1) % 5)))
+                        else:
+                            self.buy_skin(n)
             self.tick_group.draw(self.screen)
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
+    def buy_skin(self, n):
+        self.screen.fill((182, 224, 248))
+        self.screen.blit(self.back, (540, 540))
+        image = pygame.transform.scale(self.load_image(f'{n}.png', directory='skin_images'), (300, 300))
+        self.screen.blit(image, (130, 70))
+        font = pygame.font.Font(None, 60)
+        text = font.render('Купить', 1, (0, 0, 0))
+        pygame.draw.rect(self.screen, (255, 255, 255), (150, 500, 300, 80), 0)
+        self.screen.blit(text, (205 + (200 - text.get_width()) // 2, 515 + (50 - text.get_height()) // 2))
+        price = (n - 3) * 30
+        big_font = pygame.font.Font(None, 80)
+        text_price = big_font.render(f'{price}', 1, (0, 0, 0))
+        self.screen.blit(text_price, (200 + (200 - text_price.get_width()) // 2, 400 + (50 - text_price.get_height()) // 2))
+        coin = pygame.transform.scale(self.load_image('coin.png'), (80, 80))
+        self.screen.blit(coin, (330 , 380))
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if 540 <= event.pos[0] <= 590 and 540 <= event.pos[1] <= 590:
+                        self.choice_skins()
+                    if 150 <= event.pos[0] <= 450 and 500 <= event.pos[1] <= 580:
+                        if self.balance >= price:
+                            with open ('data/bought_skins.txt') as f:
+                                data = f.read()
+                            with open('data/bought_skins.txt', 'w') as f:
+                                f.write(data + str(n) + '\n')
+                            self.balance -= price
+                            with open('data/balance.txt', 'w') as f:
+                                f.write(str(self.balance))
+                            self.choice_skins()
+                        else:
+                            image = pygame.transform.scale(self.load_image('for_skins.jpg'), (600, 600))
+                            self.screen.blit(image, (0, 0))
+                            self.screen.blit(self.back, (540, 540))
+
             pygame.display.flip()
             self.clock.tick(self.fps)
 
