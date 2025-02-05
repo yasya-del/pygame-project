@@ -215,6 +215,27 @@ class Levels():
         return 390 <= pos[0] <= 590 and 515 <= pos[1] <= 590
 
 
+class Settings():
+    def __init__(self, screen):
+        self.screen = screen
+
+    def check_sound(self, sound):
+        pass
+
+    def window(self, sound):
+        self.font = pygame.font.Font(None, 50)
+        self.text = self.font.render('Settings', 1, (0, 0, 0))
+        self.screen.blit(self.text, (200 + (200 - self.text.get_width()) // 2,
+                                50 + (50 - self.text.get_height()) // 2))
+        self.text = self.font.render('Sound', 1, (0, 0, 0))
+        self.screen.blit(self.text, (50 + (200 - self.text.get_width()) // 2,
+                                100 + (50 - self.text.get_height()) // 2))
+        pygame.draw.rect(self.screen, (200, 162, 200), (400, 100, 75, 50), 0)
+        pygame.draw.rect(self.screen, (150, 0, 200), (400, 100, 75, 50), 4)
+
+
+
+
 class Tick(pygame.sprite.Sprite):
     def __init__(self, app):
         super().__init__(app.tick_group)
@@ -294,6 +315,7 @@ class App:
         self.camera = Camera(self)
         self.gravity = 0.7
         self.skin = '1.png'
+        self.sound = True
         self.tick_group = pygame.sprite.Group()
         self.tick = Tick(self)
         with open ('data/balance.txt',) as f:
@@ -400,7 +422,8 @@ class App:
         self.run_game()
 
     def run_game(self):
-        pygame.mixer.music.play(-1)
+        if self.sound:
+            pygame.mixer.music.play(-1)
         run = True
         fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
         MYEVENTTYPE = pygame.USEREVENT + 1
@@ -423,6 +446,8 @@ class App:
                     self.hero.update((10, 0))
                 if keys[pygame.K_LEFT]:
                     self.hero.update((-10, 0))
+                if keys[pygame.K_ESCAPE]:
+                    self.gamepause()
             for el in self.coins:
                 if pygame.sprite.collide_mask(el, self.hero):
                     el.rect = el.rect.move(600, 600)
