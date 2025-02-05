@@ -918,6 +918,7 @@ class App:
             self.clock.tick(self.fps)
             k += 1
 
+
     def gamepause(self):
         pygame.mixer.music.pause()
         fon = pygame.transform.scale(self.load_image('1.png', directory='fons'), (self.width, self.height))
