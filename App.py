@@ -218,22 +218,27 @@ class Levels():
 class Settings():
     def __init__(self, screen):
         self.screen = screen
+        self.image = pygame.transform.scale(app.load_image('settings.png'), (50, 50))
+        self.screen.blit(self.image, (540, 10))
 
-    def check_sound(self, sound):
-        pass
+    def check_sound(self, sound, pos):
+        x = pos[0]
+        y = pos[1]
+        if x > 400 and x < 475 and y > 100 and y < 150:
+            if sound:
+                return 1
+            else:
+                return 2
+        elif x > 540 and x < 590 and y > 540 and y < 590:
+            return 3
+        return False
 
-    def window(self, sound):
-        self.font = pygame.font.Font(None, 50)
-        self.text = self.font.render('Settings', 1, (0, 0, 0))
-        self.screen.blit(self.text, (200 + (200 - self.text.get_width()) // 2,
-                                50 + (50 - self.text.get_height()) // 2))
-        self.text = self.font.render('Sound', 1, (0, 0, 0))
-        self.screen.blit(self.text, (50 + (200 - self.text.get_width()) // 2,
-                                100 + (50 - self.text.get_height()) // 2))
-        pygame.draw.rect(self.screen, (200, 162, 200), (400, 100, 75, 50), 0)
-        pygame.draw.rect(self.screen, (150, 0, 200), (400, 100, 75, 50), 4)
-
-
+    def check_set(self, pos):
+        x = pos[0]
+        y = pos[1]
+        if x > 540 and x < 590 and y > 10 and y < 60:
+            return True
+        return False
 
 
 class Tick(pygame.sprite.Sprite):
@@ -527,6 +532,48 @@ class App:
                         self.choice_levels()
                     elif self.lvl.skins(event.pos):
                         self.choice_skins()
+                    elif self.settings.check_set(event.pos):
+                        self.setting()
+            self.settings = Settings(self.screen)
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
+    def fon_setting(self):
+        fon = pygame.transform.scale(self.load_image('fon_lvl.jpg'), (self.width, self.height))
+        self.screen.blit(fon, (0, 0))
+        self.font = pygame.font.Font(None, 50)
+        self.text = self.font.render('Settings', 1, (0, 0, 0))
+        self.screen.blit(self.text, (200 + (200 - self.text.get_width()) // 2,
+                                     50 + (50 - self.text.get_height()) // 2))
+        self.text = self.font.render('Sound', 1, (0, 0, 0))
+        self.screen.blit(self.text, (50 + (200 - self.text.get_width()) // 2,
+                                     100 + (50 - self.text.get_height()) // 2))
+        pygame.draw.rect(self.screen, (200, 162, 200), (400, 100, 75, 50), 0)
+        pygame.draw.rect(self.screen, (150, 0, 200), (400, 100, 75, 50), 4)
+        if self.sound:
+            self.image = pygame.transform.scale(self.load_image('galochka.png'), (42, 45))
+            self.screen.blit(self.image, (415, 102))
+        else:
+            self.image = pygame.transform.scale(self.load_image('no.png'), (42, 45))
+            self.screen.blit(self.image, (415, 102))
+        back = pygame.transform.scale(app.load_image('back.png'), (50, 50))
+        self.screen.blit(back, (540, 540))
+
+    def setting(self):
+        self.fon_setting()
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.settings.check_sound(self.sound, event.pos) == 1:
+                        self.sound = False
+                        self.fon_setting()
+                    elif self.settings.check_sound(self.sound, event.pos) == 2:
+                        self.sound = True
+                        self.fon_setting()
+                    elif self.settings.check_sound(self.sound, event.pos) == 3:
+                        self.start_screen()
             pygame.display.flip()
             self.clock.tick(self.fps)
 
