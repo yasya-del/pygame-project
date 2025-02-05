@@ -127,7 +127,7 @@ class Hero(pygame.sprite.Sprite):
 
     def on_platform(self):
         for el in self.app.tiles:
-            if pygame.sprite.collide_mask(el, self.app.hero) and el.rect.y > self.app.hero.rect.y + 40\
+            if pygame.sprite.collide_mask(el, self.app.hero) and el.rect.y > self.app.hero.rect.y + 20\
                     and el and self.app.hero.rect.x + 50 > el.x:
                 if self.score < len(app.tiles) - el.n - 1:
                     self.score = len(app.tiles) - el.n - 1
@@ -485,10 +485,9 @@ class App:
                     else:
                         self.line += 1
             if self.line_now != self.line:
-                self.pr_line = self.line_now
+                self.line_now += 1
                 for el in self.tiles:
-                    el.update(el.n - (self.line - self.line_now))
-                self.line_now = self.line
+                    el.update(el.n - 1)
                 level_x, level_y = self.generate_level(self.LEVEL)
 
             self.screen.blit(fon, (0, 0))
