@@ -201,7 +201,7 @@ class Levels():
                         return n
                     return 'NO'
         if mpos_x > 540 and mpos_x < 590 and mpos_y > 540 and mpos_y < 590:
-            return 4
+            return 40
         return False
 
     def ok(self, pos):
@@ -619,6 +619,7 @@ class App:
             self.clock.tick(self.fps)
 
     def choice_fon(self):
+        chosen = ''
         fon = pygame.transform.scale(self.load_image('fon_lvl.jpg'), (self.width, self.height))
         self.screen.blit(fon, (0, 0))
         lock = pygame.transform.scale(app.load_image('lock.png'), (30, 30))
@@ -670,15 +671,18 @@ class App:
                                 break
                     for file in os.listdir('fons'):
                         n = int(file.split('.')[0])
-                        if chosen == n:
-                            im_name = file
-                    if str(chosen) + '\n' in self.bought1:
-                        self.fon = pygame.transform.scale(self.load_image(im_name, directory='fons'), (self.width, self.height))
-                        self.fon_name = im_name
-                        self.choice_fon()
-                    else:
-                        image = pygame.transform.scale(self.load_image(im_name, directory='fons'), (200, 300))
-                        price = (chosen - 3) * 5
+                        if chosen:
+                            if chosen == n:
+                                im_name = file
+                    if chosen:
+                        if str(chosen) + '\n' in self.bought1:
+                            self.fon = pygame.transform.scale(self.load_image(im_name, directory='fons'),
+                                                              (self.width, self.height))
+                            self.fon_name = im_name
+                            self.choice_fon()
+                        else:
+                            image = pygame.transform.scale(self.load_image(im_name, directory='fons'), (200, 300))
+                            price = (chosen - 3) * 5
                         self.buy_fon(image, price, chosen)
             pygame.display.flip()
             self.clock.tick(self.fps)
@@ -732,7 +736,7 @@ class App:
                     self.terminate()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if type(self.lvls.check_click(event.pos)) == int:
-                        if self.lvls.check_click(event.pos) == 4:
+                        if self.lvls.check_click(event.pos) == 40:
                             self.start_screen()
                         else:
                             self.level = self.lvls.check_click(event.pos)
