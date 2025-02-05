@@ -257,6 +257,12 @@ class Settings():
             f.write('1\n')
             f.write('2\n')
             f.write('3\n')
+        with open('data/bought_fons.txt', 'w', encoding='utf-8') as f:
+            f.write('')
+        with open('data/bought_fons.txt', 'a', encoding='utf-8') as f:
+            f.write('1\n')
+            f.write('2\n')
+            f.write('3\n')
 
 
 class Tick(pygame.sprite.Sprite):
@@ -849,7 +855,8 @@ class App:
             self.clock.tick(self.fps)
 
     def end_screen(self):
-        pygame.mixer.music.pause()
+        if self.sound:
+            pygame.mixer.music.pause()
         fon = pygame.transform.scale(self.load_image('game over 1.jpg'), (self.width, self.height - 200))
         font = pygame.font.Font(None, 40)
         text = font.render(f'Счёт: {self.hero.score}', 1, (0, 0, 0))
@@ -883,7 +890,8 @@ class App:
             self.clock.tick(self.fps)
 
     def level_complete(self):
-        pygame.mixer.music.pause()
+        if self.sound:
+            pygame.mixer.music.pause()
         fon = pygame.transform.scale(self.load_image('level_complete.png'), (self.width, self.height))
         font = pygame.font.Font(None, 60)
         text = font.render('Next level', 1, (242, 227, 139))
@@ -918,7 +926,8 @@ class App:
             k += 1
 
     def gamepause(self):
-        pygame.mixer.music.pause()
+        if self.sound:
+            pygame.mixer.music.pause()
         fon = pygame.transform.scale(self.load_image('1.png', directory='fons'), (self.width, self.height))
         self.screen.blit(fon, (0, 0))
         self.pause.render(self.screen)
