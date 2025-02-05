@@ -667,7 +667,6 @@ class App:
                         if chosen == n:
                             im_name = file
                     if str(chosen) + '\n' in self.bought1:
-                        print(im_name)
                         self.fon = pygame.transform.scale(self.load_image(im_name, directory='fons'), (self.width, self.height))
                         self.fon_name = im_name
                         self.choice_fon()
@@ -917,7 +916,6 @@ class App:
             pygame.display.flip()
             self.clock.tick(self.fps)
             k += 1
-
 
     def gamepause(self):
         pygame.mixer.music.pause()
