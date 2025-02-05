@@ -231,6 +231,10 @@ class Settings():
                 return 2
         elif x > 540 and x < 590 and y > 540 and y < 590:
             return 3
+        elif x > 350 and x < 500 and y > 200 and y < 250:
+            return 4
+        elif x > 150 and x < 400 and y > 300 and y < 350:
+            return 5
         return False
 
     def check_set(self, pos):
@@ -239,6 +243,20 @@ class Settings():
         if x > 540 and x < 590 and y > 10 and y < 60:
             return True
         return False
+
+    def clear_data(self):
+        with open('data/best_result.txt', 'w', encoding='utf-8') as f:
+            f.write('0')
+        with open('data/balance.txt', 'w', encoding='utf-8') as f:
+            f.write('0')
+        with open('data/completed_levels.txt', 'w', encoding='utf-8') as f:
+            f.write('')
+        with open('data/bought_skins.txt', 'w', encoding='utf-8') as f:
+            f.write('')
+        with open('data/bought_skins.txt', 'a', encoding='utf-8') as f:
+            f.write('1\n')
+            f.write('2\n')
+            f.write('3\n')
 
 
 class Tick(pygame.sprite.Sprite):
@@ -306,6 +324,8 @@ class App:
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('Прыгаем по платформам')
         pygame.mixer.music.load('data/music.mp3', 'data/money.mp3')
+        self.fon = pygame.transform.scale(self.load_image('1.png', directory='fons'), (self.width, self.height))
+        self.fon_name = '1.png'
         self.par_sprites = pygame.sprite.Group()
         self.screen_rect = (0, 0, self.width, self.height)
         pygame.key.set_repeat(200, 70)
@@ -430,7 +450,6 @@ class App:
         if self.sound:
             pygame.mixer.music.play(-1)
         run = True
-        fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
         MYEVENTTYPE = pygame.USEREVENT + 1
         pygame.time.set_timer(MYEVENTTYPE, 25)
         while run:
@@ -490,7 +509,7 @@ class App:
                     el.update(el.n - 1)
                 level_x, level_y = self.generate_level(self.LEVEL)
 
-            self.screen.blit(fon, (0, 0))
+            self.screen.blit(self.fon, (0, 0))
             self.pause = Pause(self.screen)
             self.all_sprites.draw(self.screen)
             self.player_group.draw(self.screen)
@@ -547,8 +566,21 @@ class App:
         self.text = self.font.render('Sound', 1, (0, 0, 0))
         self.screen.blit(self.text, (50 + (200 - self.text.get_width()) // 2,
                                      100 + (50 - self.text.get_height()) // 2))
-        pygame.draw.rect(self.screen, (200, 162, 200), (400, 100, 75, 50), 0)
-        pygame.draw.rect(self.screen, (150, 0, 200), (400, 100, 75, 50), 4)
+        pygame.draw.rect(self.screen, (135, 206, 235), (400, 100, 75, 50), 0)
+        pygame.draw.rect(self.screen, (0, 191, 255), (400, 100, 75, 50), 4)
+        self.text = self.font.render('Clear data', 1, (0, 0, 0))
+        self.screen.blit(self.text, (50 + (200 - self.text.get_width()) // 2,
+                                     200 + (50 - self.text.get_height()) // 2))
+        pygame.draw.rect(self.screen, (135, 206, 235), (350, 200, 150, 50), 0)
+        pygame.draw.rect(self.screen, (0, 191, 255), (350, 200, 150, 50), 4)
+        self.text = self.font.render('Clear', 1, (0, 0, 0))
+        self.screen.blit(self.text, (350 + (150 - self.text.get_width()) // 2,
+                                     200 + (50 - self.text.get_height()) // 2))
+        pygame.draw.rect(self.screen, (135, 206, 235), (150, 300, 300, 50), 0)
+        pygame.draw.rect(self.screen, (0, 191, 255), (150, 300, 300, 50), 4)
+        self.text = self.font.render('Change gamefon', 1, (0, 0, 0))
+        self.screen.blit(self.text, (150 + (300 - self.text.get_width()) // 2,
+                                     300 + (50 - self.text.get_height()) // 2))
         if self.sound:
             self.image = pygame.transform.scale(self.load_image('galochka.png'), (42, 45))
             self.screen.blit(self.image, (415, 102))
@@ -573,6 +605,114 @@ class App:
                         self.fon_setting()
                     elif self.settings.check_sound(self.sound, event.pos) == 3:
                         self.start_screen()
+                    elif self.settings.check_sound(self.sound, event.pos) == 4:
+                        self.settings.clear_data()
+                    elif self.settings.check_sound(self.sound, event.pos) == 5:
+                        self.choice_fon()
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
+    def choice_fon(self):
+        fon = pygame.transform.scale(self.load_image('fon_lvl.jpg'), (self.width, self.height))
+        self.screen.blit(fon, (0, 0))
+        lock = pygame.transform.scale(app.load_image('lock.png'), (30, 30))
+        font = pygame.font.Font(None, 50)
+        self.back = pygame.transform.scale(app.load_image('back.png'), (50, 50))
+        self.screen.blit(self.back, (540, 540))
+        with open('data/balance.txt') as f:
+            data = f.read()
+        with open('data/bought_fons.txt') as f:
+            self.bought1 = f.readlines()
+        text = font.render(f'Balance: {data}', 1, (0, 0, 0))
+        self.screen.blit(text, (185 + (200 - text.get_width()) // 2,
+                                10 + (50 - text.get_height()) // 2))
+        for file in os.listdir('fons'):
+            n = int(file.split('.')[0])
+            img = pygame.transform.scale(app.load_image(file, directory='fons'), (150, 200))
+            self.screen.blit(img, (15 + 170 * ((n - 1) % 3), 60 + 270 * ((n - 1) // 3)))
+            pygame.draw.rect(self.screen, (135, 206, 235), (15 + 170 * ((n - 1) % 3), 60 + 270 * ((n - 1) // 3) + 210, 150, 50), 0)
+            pygame.draw.rect(self.screen, (0, 191, 255), (15 + 170 * ((n - 1) % 3), 60 + 270 * ((n - 1) // 3) + 210, 150, 50), 4)
+            if str(n) + '\n' not in self.bought1:
+                self.screen.blit(lock, (20 + 170 * ((n - 1) % 3), 68 + 270 * ((n - 1) // 3) + 210))
+                text = font.render('Buy', 1, (0, 0, 0))
+                self.screen.blit(text, (15 + 170 * ((n - 1) % 3) + 15 + (150 - text.get_width()) // 2,
+                                        60 + 270 * ((n - 1) // 3) + 210 + (50 - text.get_height()) // 2))
+            elif file == self.fon_name:
+                text = font.render('Chosen', 1, (0, 130, 0))
+                self.screen.blit(text, (15 + 170 * ((n - 1) % 3) + (150 - text.get_width()) // 2,
+                                        60 + 270 * ((n - 1) // 3) + 210 + (50 - text.get_height()) // 2))
+            else:
+                text = font.render('Choose', 1, (0, 0, 0))
+                self.screen.blit(text, (15 + 170 * ((n - 1) % 3) + (150 - text.get_width()) // 2,
+                                        60 + 270 * ((n - 1) // 3) + 210 + (50 - text.get_height()) // 2))
+        MYEVENTTYPE = pygame.USEREVENT + 1
+        pygame.time.set_timer(MYEVENTTYPE, 25)
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    x = event.pos[0]
+                    y = event.pos[1]
+                    if 540 <= x <= 590 and 540 <= y <= 590:
+                        self.start_screen()
+                    else:
+                        for i in range(1, 7):
+                            if (15 + 170 * ((i - 1) % 3) <= x <= 15 + 170 * ((i - 1) % 3) + 150
+                                and 270 + 270 * ((i - 1) // 3) <= y <= 270 + 270 * ((i - 1) // 3) + 50):
+                                chosen = i
+                                break
+                    for file in os.listdir('fons'):
+                        n = int(file.split('.')[0])
+                        if chosen == n:
+                            im_name = file
+                    if str(chosen) + '\n' in self.bought1:
+                        print(im_name)
+                        self.fon = pygame.transform.scale(self.load_image(im_name, directory='fons'), (self.width, self.height))
+                        self.fon_name = im_name
+                        self.choice_fon()
+                    else:
+                        image = pygame.transform.scale(self.load_image(im_name, directory='fons'), (200, 300))
+                        price = (chosen - 3) * 5
+                        self.buy_fon(image, price, chosen)
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
+    def buy_fon(self, image, price, n):
+        self.screen.fill((182, 224, 248))
+        self.screen.blit(self.back, (540, 540))
+        self.screen.blit(image, (200, 70))
+        font = pygame.font.Font(None, 60)
+        text = font.render('Купить', 1, (0, 0, 0))
+        pygame.draw.rect(self.screen, (255, 255, 255), (150, 500, 300, 80), 0)
+        self.screen.blit(text, (205 + (200 - text.get_width()) // 2, 515 + (50 - text.get_height()) // 2))
+        big_font = pygame.font.Font(None, 80)
+        text_price = big_font.render(f'{price}', 1, (0, 0, 0))
+        self.screen.blit(text_price,
+                         (200 + (200 - text_price.get_width()) // 2, 400 + (50 - text_price.get_height()) // 2))
+        coin = pygame.transform.scale(self.load_image('coin.png'), (80, 80))
+        self.screen.blit(coin, (330, 380))
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if 540 <= event.pos[0] <= 590 and 540 <= event.pos[1] <= 590:
+                        self.choice_fon()
+                    if 150 <= event.pos[0] <= 450 and 500 <= event.pos[1] <= 580:
+                        if self.balance >= price:
+                            with open ('data/bought_fons.txt') as f:
+                                data = f.read()
+                            with open('data/bought_fons.txt', 'w') as f:
+                                f.write(data + str(n) + '\n')
+                            self.balance -= price
+                            with open('data/balance.txt', 'w') as f:
+                                f.write(str(self.balance))
+                            self.choice_fons()
+                        else:
+                            image = pygame.transform.scale(self.load_image('for_skins.jpg'), (600, 600))
+                            self.screen.blit(image, (0, 0))
+                            self.screen.blit(self.back, (540, 540))
             pygame.display.flip()
             self.clock.tick(self.fps)
 
@@ -736,7 +876,7 @@ class App:
                     if self.yes.check_click_change_level(event.pos):
                         self.choice_levels()
                     elif self.no.check_click(event.pos):
-                        self.terminate()
+                        self.start_screen()
                     elif self.yes.check_click(event.pos):
                         self.new_game()
 
@@ -780,7 +920,7 @@ class App:
 
     def gamepause(self):
         pygame.mixer.music.pause()
-        fon = pygame.transform.scale(self.load_image('gamefon.png'), (self.width, self.height))
+        fon = pygame.transform.scale(self.load_image('1.png', directory='fons'), (self.width, self.height))
         self.screen.blit(fon, (0, 0))
         self.pause.render(self.screen)
         while True:
