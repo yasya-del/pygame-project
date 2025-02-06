@@ -821,7 +821,7 @@ class App:
         text = font.render('Купить', 1, (0, 0, 0))
         pygame.draw.rect(self.screen, (255, 255, 255), (150, 500, 300, 80), 0)
         self.screen.blit(text, (205 + (200 - text.get_width()) // 2, 515 + (50 - text.get_height()) // 2))
-        price = (n - 3) * 5
+        price = (n - 3) * 15
         big_font = pygame.font.Font(None, 80)
         text_price = big_font.render(f'{price}', 1, (0, 0, 0))
         self.screen.blit(text_price, (200 + (200 - text_price.get_width()) // 2, 400 + (50 - text_price.get_height()) // 2))
@@ -953,14 +953,17 @@ class App:
         else:
             text = font.render('Back to Menu', 1, (242, 227, 139))
             fon.blit(text, (300, 550))
-        with open('data/completed_levels.txt', 'a') as f:
-            f.write(str(self.level) + '\n')
+        with open('data/completed_levels.txt') as f:
+            data = f.readlines()
+        if str(self.level) + '\n' not in data:
+            with open('data/completed_levels.txt', 'a') as f:
+                f.write(str(self.level) + '\n')
         with open('data/best_result.txt') as f:
             data = f.read()
         if self.hero.score > int(data):
             data = self.hero.score
             with open('data/best_result.txt', 'w') as f_in:
-                f_in.write(str(self.hero.score))
+                f_in.write(str(data))
         with open('data/balance.txt', 'w') as f_in:
             f_in.write(str(self.balance))
         self.screen.blit(fon, (0, 0))
