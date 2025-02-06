@@ -14,9 +14,10 @@ class Coin(pygame.sprite.Sprite):
         self.app = app
 
     def collect(self):
-        sound = pygame.mixer.Sound('data/money.mp3')
-        empty_channel = pygame.mixer.find_channel()
-        empty_channel.play(sound)
+        if app.sound:
+            sound = pygame.mixer.Sound('data/money.mp3')
+            empty_channel = pygame.mixer.find_channel()
+            empty_channel.play(sound)
         self.app.balance += 1
 
 
@@ -263,6 +264,17 @@ class Settings():
             f.write('1\n')
             f.write('2\n')
             f.write('3\n')
+        app.fon_name = '1.png'
+        app.setting()
+
+    def warn_clear_data(self, pos):
+        x = pos[0]
+        y = pos[1]
+        if x >= 55 and x <= 115 and y >= 320 and y <= 350:
+            return 'no'
+        elif x >= 490 and x <= 550 and y >= 320 and y <= 350:
+            return 'ok'
+        return False
 
 
 class Tick(pygame.sprite.Sprite):
@@ -612,7 +624,7 @@ class App:
                     elif self.settings.check_sound(self.sound, event.pos) == 3:
                         self.start_screen()
                     elif self.settings.check_sound(self.sound, event.pos) == 4:
-                        self.settings.clear_data()
+                        self.clear_data()
                     elif self.settings.check_sound(self.sound, event.pos) == 5:
                         self.choice_fon()
             pygame.display.flip()
@@ -662,7 +674,7 @@ class App:
                     x = event.pos[0]
                     y = event.pos[1]
                     if 540 <= x <= 590 and 540 <= y <= 590:
-                        self.start_screen()
+                        self.setting()
                     else:
                         for i in range(1, 7):
                             if (15 + 170 * ((i - 1) % 3) <= x <= 15 + 170 * ((i - 1) % 3) + 150
@@ -840,6 +852,43 @@ class App:
             pygame.display.flip()
             self.clock.tick(self.fps)
 
+    def clear_data(self):
+        intro_text = ["Вы уверены,",
+                      "что хотите удалить все данные",
+                      "о прохождении уровней, покупке фонов,",
+                      "скинов и балансе?"]
+        image = pygame.transform.scale(self.load_image('warn.jpg'), (500, 200))
+        self.screen.blit(image, (50, 150))
+        self.font = pygame.font.Font(None, 30)
+        self.text = self.font.render('Clear', 1, (0, 0, 0))
+        pygame.draw.rect(self.screen, (19, 186, 255), (490, 320, 60, 30), 0)
+        self.screen.blit(self.text, (490 + (60 - self.text.get_width()) // 2,
+                                     320 + (30 - self.text.get_height()) // 2))
+        self.text = self.font.render('Cancel', 1, (0, 0, 0))
+        pygame.draw.rect(self.screen, (0, 104, 253), (55, 320, 60, 30), 0)
+        self.screen.blit(self.text, (55 + (60 - self.text.get_width()) // 2,
+                                     320 + (30 - self.text.get_height()) // 2))
+        text_coord = 175
+        for line in intro_text:
+            string_rendered = self.font.render(line, 1, pygame.Color('black'))
+            intro_rect = string_rendered.get_rect()
+            text_coord += 10
+            intro_rect.top = text_coord
+            intro_rect.x = 85
+            text_coord += intro_rect.height
+            self.screen.blit(string_rendered, intro_rect)
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.settings.warn_clear_data(event.pos) == 'ok':
+                        self.settings.clear_data()
+                    elif self.settings.warn_clear_data(event.pos) == 'no':
+                        self.setting()
+            pygame.display.flip()
+            self.clock.tick(self.fps)
+
     def pr_lvl(self):
         image = pygame.transform.scale(self.load_image('for_lvls.jpg'), (500, 200))
         self.screen.blit(image, (50, 200))
@@ -932,8 +981,7 @@ class App:
     def gamepause(self):
         if self.sound:
             pygame.mixer.music.pause()
-        fon = pygame.transform.scale(self.load_image('1.png', directory='fons'), (self.width, self.height))
-        self.screen.blit(fon, (0, 0))
+        self.screen.blit(self.fon, (0, 0))
         self.pause.render(self.screen)
         while True:
             for event in pygame.event.get():
