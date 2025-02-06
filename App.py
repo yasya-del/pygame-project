@@ -50,7 +50,7 @@ class Tile(pygame.sprite.Sprite):
         self.n = n
 
 
-class Pause():
+class Pause:
     def __init__(self, screen):
         self.font = pygame.font.Font(None, 50)
         self.text = self.font.render('| |', 1, (150, 0, 200))
@@ -481,12 +481,12 @@ class App:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if self.pause.check_click(event.pos):
                         self.gamepause()
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_UP and self.hero.on_platform():
+                if event.type == pygame.KEYDOWN and (event.key == pygame.K_UP or event.key == pygame.K_w) and self.hero.on_platform():
                     self.hero.jump()
                 keys = pygame.key.get_pressed()
-                if keys[pygame.K_RIGHT]:
+                if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
                     self.hero.update((10, 0))
-                if keys[pygame.K_LEFT]:
+                if keys[pygame.K_LEFT] or keys[pygame.K_a]:
                     self.hero.update((-10, 0))
                 if keys[pygame.K_ESCAPE]:
                     self.gamepause()
