@@ -729,7 +729,7 @@ class App:
                             self.balance -= price
                             with open('data/balance.txt', 'w') as f:
                                 f.write(str(self.balance))
-                            self.choice_fons()
+                            self.choice_fon()
                         else:
                             image = pygame.transform.scale(self.load_image('for_skins.jpg'), (600, 600))
                             self.screen.blit(image, (0, 0))
@@ -759,8 +759,8 @@ class App:
             self.clock.tick(self.fps)
 
     def choice_skins(self):
-        self.fon = pygame.transform.scale(self.load_image('fon_lvl.jpg'), (self.width, self.height))
-        self.screen.blit(self.fon, (0, 0))
+        fon = pygame.transform.scale(self.load_image('fon_lvl.jpg'), (self.width, self.height))
+        self.screen.blit(fon, (0, 0))
         lock = pygame.transform.scale(app.load_image('lock.png'), (30, 30))
         font = pygame.font.Font(None, 50)
         self.back = pygame.transform.scale(app.load_image('back.png'), (50, 50))
@@ -793,7 +793,7 @@ class App:
                             self.tick.update((300 * (n // 6) + 100, 50 + 100 * ((n - 1) % 5)))
                             if n != 0:
                                 self.skin = f'{n}.png'
-                            self.screen.blit(self.fon, (0, 0))
+                            self.screen.blit(fon, (0, 0))
                             self.screen.blit(self.back, (540, 540))
                             with open('data/balance.txt') as f:
                                 data = f.read()
@@ -821,7 +821,7 @@ class App:
         text = font.render('Купить', 1, (0, 0, 0))
         pygame.draw.rect(self.screen, (255, 255, 255), (150, 500, 300, 80), 0)
         self.screen.blit(text, (205 + (200 - text.get_width()) // 2, 515 + (50 - text.get_height()) // 2))
-        price = (n - 3) * 30
+        price = (n - 3) * 5
         big_font = pygame.font.Font(None, 80)
         text_price = big_font.render(f'{price}', 1, (0, 0, 0))
         self.screen.blit(text_price, (200 + (200 - text_price.get_width()) // 2, 400 + (50 - text_price.get_height()) // 2))
@@ -947,7 +947,12 @@ class App:
             pygame.mixer.music.pause()
         fon = pygame.transform.scale(self.load_image('level_complete.png'), (self.width, self.height))
         font = pygame.font.Font(None, 60)
-        text = font.render('Next level', 1, (242, 227, 139))
+        if self.level < 10:
+            text = font.render('Next level', 1, (242, 227, 139))
+            fon.blit(text, (400, 550))
+        else:
+            text = font.render('Back to Menu', 1, (242, 227, 139))
+            fon.blit(text, (300, 550))
         with open('data/completed_levels.txt', 'a') as f:
             f.write(str(self.level) + '\n')
         with open('data/best_result.txt') as f:
@@ -958,7 +963,6 @@ class App:
                 f_in.write(str(self.hero.score))
         with open('data/balance.txt', 'w') as f_in:
             f_in.write(str(self.balance))
-        fon.blit(text, (400, 550))
         self.screen.blit(fon, (0, 0))
         k = 0
         while True:
@@ -966,9 +970,11 @@ class App:
                 if event.type == pygame.QUIT:
                     self.terminate()
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if 400 <= event.pos[0] <= 400 + text.get_width() and 550 <= event.pos[1] <= 550 + text.get_height():
+                    if 400 <= event.pos[0] <= 400 + text.get_width() and 550 <= event.pos[1] <= 550 + text.get_height() and self.level != 10:
                         self.level += 1
                         self.new_game()
+                    elif 300 <= event.pos[0] <= 400 + text.get_width() and 550 <= event.pos[1] <= 550 + text.get_height() and self.level == 10:
+                        self.start_screen()
             if k % 3 == 0:
                 self.create_particles((random.randrange(0, 600), random.randrange(0, 100)))
             self.par_sprites.update()
