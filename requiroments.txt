@@ -1,2 +1,1 @@
-использованные библиотеки:
-os, sys, pygame, random
+pygame
